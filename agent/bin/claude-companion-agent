@@ -1,0 +1,25 @@
+#!/usr/bin/env node
+
+const path = require('path');
+const { existsSync } = require('fs');
+
+// Try to find the compiled JavaScript file
+const distPath = path.join(__dirname, '..', 'dist', 'cli.js');
+const srcPath = path.join(__dirname, '..', 'src', 'cli.ts');
+
+if (existsSync(distPath)) {
+  // Production: use compiled JavaScript
+  require(distPath);
+} else if (existsSync(srcPath)) {
+  // Development: use ts-node to run TypeScript directly
+  try {
+    require('ts-node/register');
+    require(srcPath);
+  } catch (error) {
+    console.error('Error: Please run "npm run build" first or install ts-node for development');
+    process.exit(1);
+  }
+} else {
+  console.error('Error: Could not find CLI entry point');
+  process.exit(1);
+}

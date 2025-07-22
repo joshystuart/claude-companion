@@ -1,0 +1,44 @@
+#!/usr/bin/env node
+
+import { sendHookEvent, parseStdinData, outputHookResponse, generateSessionId } from '../utils/hook-utils';
+import { HookEvent } from '../types';
+
+async function main() {
+  const [serverUrl, agentId, token] = process.argv.slice(2);
+
+  if (!serverUrl || !agentId) {
+    console.error('Usage: post-tool-use.js <serverUrl> <agentId> [token]');
+    process.exit(1);
+  }
+
+  try {
+    // Parse tool result data from Claude Code
+    const resultData = parseStdinData();
+    
+    const sessionId = process.env.CLAUDE_SESSION_ID || generateSessionId();
+    
+    const event: HookEvent = {
+      agentId,
+      sessionId,
+      hookType: 'post_tool_use',
+      timestamp: new Date().toISOString(),
+      data: {
+        toolName: resultData.tool,
+        result: resultData.result,
+        rawInput: resultData,
+      },
+    };
+
+    // Send event to server
+    const response = await sendHookEvent(serverUrl, agentId, event, token);
+    
+    // Post-tool-use hooks typically just acknowledge
+    outputHookResponse({ approved: true });
+
+  } catch (error) {
+    // On error, just acknowledge
+    outputHookResponse({ approved: true });
+  }
+}
+
+main();
