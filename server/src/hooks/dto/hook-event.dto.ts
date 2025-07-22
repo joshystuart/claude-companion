@@ -20,6 +20,13 @@ export class HookEventDto {
     toolArgs?: any;
     result?: any;
     message?: string;
+    sessionId?: string;
+    transcriptPath?: string;
+    cwd?: string;
+    riskLevel?: 'low' | 'medium' | 'high';
+    requiresApproval?: boolean;
+    suggestedAction?: string;
+    context?: string[];
     rawInput?: any;
   };
 }

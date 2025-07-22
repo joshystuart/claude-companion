@@ -77,6 +77,92 @@ export function parseStdinData(): any {
   }
 }
 
+export async function checkForPendingCommands(
+  serverUrl: string,
+  agentId: string,
+  token?: string,
+  timeoutMs = 1000 // Fast check for pending commands
+): Promise<any[]> {
+  const controller = new AbortController();
+  const timeoutId = setTimeout(() => controller.abort(), timeoutMs);
+
+  try {
+    const headers: Record<string, string> = {};
+    
+    if (token) {
+      headers['Authorization'] = `Bearer ${token}`;
+    }
+
+    const response = await fetch(`${serverUrl}/api/commands/${agentId}`, {
+      method: 'GET',
+      headers,
+      signal: controller.signal,
+    });
+
+    clearTimeout(timeoutId);
+
+    if (!response.ok) {
+      return []; // No commands if server error
+    }
+
+    const commands = await response.json();
+    return Array.isArray(commands) ? commands : [];
+
+  } catch (error) {
+    clearTimeout(timeoutId);
+    return []; // No commands if error
+  }
+}
+
+export async function markCommandAsProcessing(
+  serverUrl: string,
+  commandId: string,
+  token?: string
+): Promise<void> {
+  try {
+    const headers: Record<string, string> = {
+      'Content-Type': 'application/json',
+    };
+    
+    if (token) {
+      headers['Authorization'] = `Bearer ${token}`;
+    }
+
+    await fetch(`${serverUrl}/api/commands/${commandId}/processing`, {
+      method: 'PUT',
+      headers,
+    });
+  } catch (error) {
+    // Ignore errors - not critical for hook execution
+  }
+}
+
+export async function completeCommand(
+  serverUrl: string,
+  commandId: string,
+  status: 'completed' | 'expired',
+  result?: string,
+  token?: string
+): Promise<void> {
+  try {
+    const headers: Record<string, string> = {
+      'Content-Type': 'application/json',
+    };
+    
+    if (token) {
+      headers['Authorization'] = `Bearer ${token}`;
+    }
+
+    await fetch(`${serverUrl}/api/commands/${commandId}/complete`, {
+      method: 'PUT',
+      headers,
+      body: JSON.stringify({ status, result }),
+    });
+  } catch (error) {
+    // Ignore errors - not critical for hook execution
+  }
+}
+
 export function outputHookResponse(response: HookResponse): void {
   // Claude Code expects JSON response on stdout
   console.log(JSON.stringify(response));

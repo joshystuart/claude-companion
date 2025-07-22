@@ -1,7 +1,15 @@
 #!/usr/bin/env node
 
-import { sendHookEvent, parseStdinData, outputHookResponse, generateSessionId } from '../utils/hook-utils';
-import { HookEvent } from '../types';
+import { 
+  sendHookEvent, 
+  parseStdinData, 
+  outputHookResponse, 
+  generateSessionId,
+  checkForPendingCommands,
+  markCommandAsProcessing,
+  completeCommand
+} from '../utils/hook-utils';
+import { HookEvent, HookResponse } from '../types';
 
 async function main() {
   const [serverUrl, agentId, token] = process.argv.slice(2);
@@ -40,14 +48,17 @@ async function main() {
     // Log event before sending
     require('fs').appendFileSync('/tmp/claude-companion-debug.log', `[${new Date().toISOString()}] Sending event: ${JSON.stringify(event)}\n`);
     
-    // Send event to server and get response
-    const response = await sendHookEvent(serverUrl, agentId, event, token);
+    // Send event to server first (for monitoring)
+    await sendHookEvent(serverUrl, agentId, event, token);
     
-    // Log response
-    require('fs').appendFileSync('/tmp/claude-companion-debug.log', `[${new Date().toISOString()}] Received response: ${JSON.stringify(response)}\n`);
+    // Phase 2: Check for pending commands and process them
+    const finalResponse = await processWithCommandChecking(serverUrl, agentId, sessionId, token);
+    
+    // Log final response
+    require('fs').appendFileSync('/tmp/claude-companion-debug.log', `[${new Date().toISOString()}] Final response: ${JSON.stringify(finalResponse)}\n`);
     
     // Output response to Claude Code
-    outputHookResponse(response);
+    outputHookResponse(finalResponse);
 
   } catch (error) {
     // Log error details for debugging
@@ -65,6 +76,90 @@ async function main() {
       reason: 'Hook execution error, proceeding' 
     });
   }
+}
+
+async function processWithCommandChecking(
+  serverUrl: string,
+  agentId: string,
+  sessionId: string,
+  token?: string,
+  maxWaitTime = 30000 // 30 seconds max wait
+): Promise<HookResponse> {
+  const startTime = Date.now();
+  
+  while (Date.now() - startTime < maxWaitTime) {
+    try {
+      // Check for pending commands
+      const pendingCommands = await checkForPendingCommands(serverUrl, agentId, token);
+      
+      if (pendingCommands.length > 0) {
+        // Process the first relevant command
+        for (const command of pendingCommands) {
+          if (command.sessionId === sessionId || !command.sessionId) {
+            // Mark command as processing
+            await markCommandAsProcessing(serverUrl, command.id, token);
+            
+            // Process the command
+            const response = await executeCommand(command);
+            
+            // Mark command as completed
+            await completeCommand(serverUrl, command.id, 'completed', 'Executed by hook', token);
+            
+            return response;
+          }
+        }
+      }
+      
+      // Wait a bit before checking again (but not too long to keep hook fast)
+      await sleep(500); // 500ms
+      
+    } catch (error) {
+      // If command checking fails, default to approval
+      require('fs').appendFileSync('/tmp/claude-companion-debug.log', `[${new Date().toISOString()}] Command checking error: ${error}\n`);
+      break;
+    }
+  }
+  
+  // No commands found or timeout - default approval
+  return {
+    approved: true,
+    reason: 'No remote commands, proceeding',
+  };
+}
+
+function executeCommand(command: any): HookResponse {
+  switch (command.type) {
+    case 'approve':
+      return {
+        approved: true,
+        reason: command.payload.reason || 'Approved remotely',
+        feedback: command.payload.feedback,
+      };
+      
+    case 'deny':
+      return {
+        approved: false,
+        reason: command.payload.reason || 'Denied remotely',
+        feedback: command.payload.feedback,
+      };
+      
+    case 'context':
+      return {
+        approved: true,
+        reason: 'Context provided remotely',
+        feedback: command.payload.instructions || command.payload.feedback,
+      };
+      
+    default:
+      return {
+        approved: true,
+        reason: 'Unknown command type, proceeding',
+      };
+  }
+}
+
+function sleep(ms: number): Promise<void> {
+  return new Promise(resolve => setTimeout(resolve, ms));
 }
 
 main();

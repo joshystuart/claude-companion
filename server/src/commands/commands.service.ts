@@ -112,7 +112,7 @@ export class CommandsService {
     return `cmd-${timestamp}-${random}`;
   }
 
-  private async cleanupExpiredCommands(): void {
+  private async cleanupExpiredCommands(): Promise<void> {
     const now = new Date();
     let expiredCount = 0;
 

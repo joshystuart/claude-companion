@@ -1,15 +1,20 @@
-// import { useState } from 'react';
+import { useState } from 'react';
 import { formatDistanceToNow } from 'date-fns';
 import { 
   Computer, 
   Clock, 
   Filter,
   Circle,
-  Terminal
+  Terminal,
+  Shield,
+  History
 } from 'lucide-react';
 import { useDashboardStore } from '@/store/dashboard-store';
 import { HookEvent } from '@/types';
 import { clsx } from 'clsx';
+import { EventControl } from '@/components/EventControl';
+import { SessionControl } from '@/components/SessionControl';
+import { CommandHistory } from '@/components/CommandHistory';
 
 export function Dashboard() {
   const {
@@ -22,7 +27,8 @@ export function Dashboard() {
     clearEvents,
   } = useDashboardStore();
 
-  // const [showEventDetails, setShowEventDetails] = useState<string | null>(null);
+  const [showCommandHistory, setShowCommandHistory] = useState(false);
+  const [selectedAgent, setSelectedAgentState] = useState<string | null>(null);
 
   const events = getFilteredEvents();
   const agentList = Array.from(agents.values());
@@ -76,6 +82,13 @@ export function Dashboard() {
         </div>
         
         <div className="flex items-center space-x-3">
+          <button
+            onClick={() => setShowCommandHistory(!showCommandHistory)}
+            className="btn btn-secondary px-4 py-2 flex items-center gap-2"
+          >
+            <History className="h-4 w-4" />
+            {showCommandHistory ? 'Hide' : 'Show'} Command History
+          </button>
           <button
             onClick={clearEvents}
             className="btn btn-secondary px-4 py-2"
@@ -135,6 +148,13 @@ export function Dashboard() {
         </div>
       </div>
 
+      {/* Command History Modal */}
+      {showCommandHistory && (
+        <div className="mb-6">
+          <CommandHistory />
+        </div>
+      )}
+
       <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
         {/* Agents List */}
         <div className="lg:col-span-1">
@@ -159,9 +179,14 @@ export function Dashboard() {
                       'p-4 hover:bg-gray-50 cursor-pointer transition-colors',
                       selectedAgentId === agent.id && 'bg-primary-50'
                     )}
-                    onClick={() => setSelectedAgent(
-                      selectedAgentId === agent.id ? null : agent.id
-                    )}
+                    onClick={() => {
+                      setSelectedAgent(
+                        selectedAgentId === agent.id ? null : agent.id
+                      );
+                      setSelectedAgentState(
+                        selectedAgent === agent.id ? null : agent.id
+                      );
+                    }}
                   >
                     <div className="flex items-center justify-between">
                       <div className="flex items-center space-x-3">
@@ -193,6 +218,18 @@ export function Dashboard() {
               )}
             </div>
           </div>
+          
+          {/* Session Control for Selected Agent */}
+          {selectedAgent && agentList.find(a => a.id === selectedAgent) && (
+            <div className="mt-6">
+              <SessionControl 
+                agent={agentList.find(a => a.id === selectedAgent)!}
+                onCommandSent={() => {
+                  // Optionally refresh or show notification
+                }}
+              />
+            </div>
+          )}
         </div>
 
         {/* Events Feed */}
@@ -230,33 +267,15 @@ export function Dashboard() {
                   </p>
                 </div>
               ) : (
-                <div className="divide-y divide-gray-200">
+                <div className="space-y-2 p-4">
                   {events.map((event) => (
-                    <div key={`${event.agentId}-${event.timestamp}`} className="p-4 hover:bg-gray-50">
-                      <div className="flex items-start space-x-3">
-                        <span className="text-lg leading-none mt-1">
-                          {getEventIcon(event.hookType)}
-                        </span>
-                        <div className="flex-1 min-w-0">
-                          <div className="flex items-center justify-between">
-                            <p className="text-sm font-medium text-gray-900">
-                              {event.hookType.replace('_', ' ')}
-                            </p>
-                            <p className="text-xs text-gray-500">
-                              {formatDistanceToNow(new Date(event.timestamp), { addSuffix: true })}
-                            </p>
-                          </div>
-                          
-                          <p className="text-sm text-gray-600 mt-1">
-                            Agent: {event.agentId}
-                          </p>
-                          
-                          <p className="text-sm text-gray-800 mt-1">
-                            {formatEventData(event)}
-                          </p>
-                        </div>
-                      </div>
-                    </div>
+                    <EventControl
+                      key={`${event.agentId}-${event.timestamp}`}
+                      event={event}
+                      onCommandSent={() => {
+                        // Optionally refresh or show notification
+                      }}
+                    />
                   ))}
                 </div>
               )}

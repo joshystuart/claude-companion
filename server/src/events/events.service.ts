@@ -76,6 +76,17 @@ export class EventsService {
     await this.broadcast(eventData);
   }
 
+  async broadcastCommandUpdate(command: RemoteCommand): Promise<void> {
+    const eventData: EventStreamData = {
+      type: 'command_update',
+      data: command,
+      timestamp: new Date().toISOString(),
+    };
+
+    this.addToHistory(eventData);
+    await this.broadcast(eventData);
+  }
+
   async broadcastError(message: string): Promise<void> {
     const eventData: EventStreamData = {
       type: 'error',

@@ -4,6 +4,7 @@ import { ThrottlerModule } from '@nestjs/throttler';
 import { HooksModule } from './hooks/hooks.module';
 import { EventsModule } from './events/events.module';
 import { AuthModule } from './auth/auth.module';
+import { CommandsModule } from './commands/commands.module';
 
 @Module({
   imports: [
@@ -22,6 +23,7 @@ import { AuthModule } from './auth/auth.module';
     // Feature modules
     HooksModule,
     EventsModule,
+    CommandsModule,
     AuthModule,
   ],
 })
