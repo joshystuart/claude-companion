@@ -8,6 +8,13 @@ export interface HookEvent {
     toolArgs?: any;
     result?: any;
     message?: string;
+    sessionId?: string;
+    transcriptPath?: string;
+    cwd?: string;
+    riskLevel?: 'low' | 'medium' | 'high';
+    requiresApproval?: boolean;
+    suggestedAction?: string;
+    context?: string[];
     rawInput?: any;
   };
 }
@@ -26,8 +33,24 @@ export interface Agent {
   status: 'active' | 'idle' | 'offline';
 }
 
+export interface RemoteCommand {
+  id: string;
+  agentId: string;
+  sessionId: string;
+  type: 'approve' | 'deny' | 'context' | 'continue' | 'stop';
+  payload: {
+    reason?: string;
+    feedback?: string;
+    instructions?: string;
+  };
+  status: 'pending' | 'processing' | 'completed' | 'expired';
+  createdAt: Date;
+  expiresAt: Date;
+  relatedEventId?: string;
+}
+
 export interface EventStreamData {
-  type: 'hook_event' | 'agent_status' | 'error';
-  data: HookEvent | Agent | { message: string };
+  type: 'hook_event' | 'agent_status' | 'command_update' | 'error';
+  data: HookEvent | Agent | RemoteCommand | { message: string };
   timestamp: string;
 }

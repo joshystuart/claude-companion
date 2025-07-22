@@ -8,6 +8,9 @@ export interface HookEvent {
     toolArgs?: any;
     result?: any;
     message?: string;
+    sessionId?: string;
+    transcriptPath?: string;
+    cwd?: string;
     rawInput?: any;
   };
 }

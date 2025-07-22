@@ -23,8 +23,11 @@ async function main() {
       hookType: 'post_tool_use',
       timestamp: new Date().toISOString(),
       data: {
-        toolName: resultData.tool,
-        result: resultData.result,
+        toolName: resultData.tool_name,
+        result: resultData.tool_result,
+        sessionId: resultData.session_id,
+        transcriptPath: resultData.transcript_path,
+        cwd: resultData.cwd,
         rawInput: resultData,
       },
     };

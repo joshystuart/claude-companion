@@ -1,6 +1,6 @@
 import { Injectable, Logger } from '@nestjs/common';
 import { Response } from 'express';
-import { HookEvent, Agent, EventStreamData } from '../libs/types';
+import { HookEvent, Agent, EventStreamData, RemoteCommand } from '../libs/types';
 
 interface SSEClient {
   id: string;

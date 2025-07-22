@@ -46,12 +46,48 @@ export async function installHooks(config: AgentConfig): Promise<void> {
     // Get the path to our hook executables
     const hookBasePath = getHookExecutablePath();
     
-    // Install hook commands
+    // Install hook commands using the new array format
     settings.hooks = {
-      pre_tool_use: `node "${join(hookBasePath, 'pre-tool-use.js')}" "${config.serverUrl}" "${config.agentId}" "${config.token || ''}"`,
-      post_tool_use: `node "${join(hookBasePath, 'post-tool-use.js')}" "${config.serverUrl}" "${config.agentId}" "${config.token || ''}"`,
-      stop: `node "${join(hookBasePath, 'stop.js')}" "${config.serverUrl}" "${config.agentId}" "${config.token || ''}"`,
-      notification: `node "${join(hookBasePath, 'notification.js')}" "${config.serverUrl}" "${config.agentId}" "${config.token || ''}"`
+      PreToolUse: [
+        {
+          hooks: [
+            {
+              type: "command",
+              command: `node "${join(hookBasePath, 'pre-tool-use.js')}" "${config.serverUrl}" "${config.agentId}" "${config.token || ''}"`
+            }
+          ]
+        }
+      ],
+      PostToolUse: [
+        {
+          hooks: [
+            {
+              type: "command",
+              command: `node "${join(hookBasePath, 'post-tool-use.js')}" "${config.serverUrl}" "${config.agentId}" "${config.token || ''}"`
+            }
+          ]
+        }
+      ],
+      Stop: [
+        {
+          hooks: [
+            {
+              type: "command",
+              command: `node "${join(hookBasePath, 'stop.js')}" "${config.serverUrl}" "${config.agentId}" "${config.token || ''}"`
+            }
+          ]
+        }
+      ],
+      Notification: [
+        {
+          hooks: [
+            {
+              type: "command",
+              command: `node "${join(hookBasePath, 'notification.js')}" "${config.serverUrl}" "${config.agentId}" "${config.token || ''}"`
+            }
+          ]
+        }
+      ]
     };
 
     // Write updated settings
@@ -119,12 +155,23 @@ export async function checkInstallStatus(): Promise<InstallStatus> {
 
     const hasCompanionHooks = settings.hooks && 
       typeof settings.hooks === 'object' &&
-      Object.values(settings.hooks).some((hook: any) => 
-        typeof hook === 'string' && (
-          hook.includes('claude-companion-agent') || 
-          hook.includes('claude-companion/agent')
-        )
-      );
+      ['PreToolUse', 'PostToolUse', 'Stop', 'Notification'].some(hookType => {
+        const hookArray = settings.hooks[hookType];
+        return Array.isArray(hookArray) && hookArray.some((hookConfig: any) => {
+          return hookConfig.hooks && Array.isArray(hookConfig.hooks) &&
+            hookConfig.hooks.some((hook: any) => {
+              return hook.type === 'command' && 
+                typeof hook.command === 'string' && (
+                  hook.command.includes('claude-companion-agent') || 
+                  hook.command.includes('claude-companion/agent') ||
+                  hook.command.includes('pre-tool-use.js') ||
+                  hook.command.includes('post-tool-use.js') ||
+                  hook.command.includes('stop.js') ||
+                  hook.command.includes('notification.js')
+                );
+            });
+        });
+      });
 
     if (!hasCompanionHooks) {
       return { installed: false };
