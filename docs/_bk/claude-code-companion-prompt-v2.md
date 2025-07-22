@@ -572,6 +572,7 @@ systemStream.onmessage = (event) => {
 ## Docker Deployment
 
 ### Dockerfile
+
 ```dockerfile
 FROM node:18-alpine
 
@@ -580,7 +581,7 @@ WORKDIR /app
 COPY package*.json ./
 RUN npm ci --only=production
 
-COPY . .
+COPY .. .
 RUN npm run build
 
 EXPOSE 3000
