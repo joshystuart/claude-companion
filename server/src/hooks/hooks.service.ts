@@ -34,7 +34,7 @@ export class HooksService {
       const { computerId, computerName, hostname, platform, agentName, workingDirectory } = hookEvent.data || {};
       
       // Debug logging
-      this.logger.debug(`Enhanced context extracted:`, {
+      this.logger.log(`Enhanced context extracted:`, {
         computerId,
         computerName,
         hostname,
@@ -81,16 +81,24 @@ export class HooksService {
       // Store the event
       this.storageService.addEvent(session.id, hookEvent);
       
-      // Broadcast agent status update for dashboard compatibility
-      await this.eventsService.broadcastAgentStatus({
-        id: agent.id,
-        lastSeen: new Date(agent.lastActivity),
-        sessionId: session.id,
-        status: agent.status
-      });
-      
       // Broadcast event to connected clients
       await this.eventsService.broadcastHookEvent(hookEvent);
+      
+      // Broadcast agent status update for dashboard compatibility
+      try {
+        this.logger.log(`About to broadcast agent status for ${agent.id} with status ${agent.status}`);
+        // Convert to the old Agent format expected by the dashboard
+        const agentStatusData = {
+          id: agent.id,
+          lastSeen: new Date(),
+          sessionId: session.id,
+          status: agent.status as 'active' | 'idle' | 'offline'
+        };
+        await this.eventsService.broadcastAgentStatus(agentStatusData);
+        this.logger.log(`Successfully broadcasted agent status for ${agent.id}`);
+      } catch (error) {
+        this.logger.error(`Failed to broadcast agent status: ${error.message}`, error.stack);
+      }
 
       // Phase 2: Check for pending commands and process them
       // For now, still approve everything but with enhanced logic for Phase 2 readiness
