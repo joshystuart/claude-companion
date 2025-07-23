@@ -1,8 +1,8 @@
 {
-  "name": "claude-companion-server",
+  "name": "afk-server",
   "version": "0.1.0",
-  "description": "NestJS API server for Claude Code Companion with SSE streaming",
-  "author": "Claude Code Companion",
+  "description": "NestJS API server for AFK: Away From Klaude with SSE streaming",
+  "author": "AFK: Away From Klaude",
   "private": true,
   "license": "MIT",
   "scripts": {

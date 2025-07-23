@@ -69,7 +69,7 @@ export function Settings() {
       <div>
         <h2 className="text-2xl font-bold text-gray-900">Settings</h2>
         <p className="text-gray-600">
-          Configure your Claude Code Companion dashboard
+          Configure your AFK: Away From Klaude dashboard
         </p>
       </div>
 
@@ -127,7 +127,7 @@ export function Settings() {
               placeholder="http://localhost:3000"
             />
             <p className="mt-1 text-sm text-gray-500">
-              The URL where your Claude Code Companion server is running
+              The URL where your AFK: Away From Klaude server is running
             </p>
           </div>
 
@@ -181,8 +181,8 @@ export function Settings() {
             <div className="text-sm text-gray-700">
               <p className="font-medium mb-2">To start monitoring your Claude Code sessions:</p>
               <ol className="list-decimal list-inside space-y-1 ml-4">
-                <li>Install the agent globally: <code className="bg-gray-200 px-1 rounded">npm install -g claude-companion-agent</code></li>
-                <li>Install hooks: <code className="bg-gray-200 px-1 rounded">claude-companion-agent install --server-url {serverUrl}</code></li>
+                <li>Install the agent globally: <code className="bg-gray-200 px-1 rounded">npm install -g afk-agent</code></li>
+                <li>Install hooks: <code className="bg-gray-200 px-1 rounded">afk-agent install --server-url {serverUrl}</code></li>
                 <li>Your Claude Code sessions will now send monitoring events to this dashboard</li>
               </ol>
             </div>

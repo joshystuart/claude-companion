@@ -1,7 +1,7 @@
 {
-  "name": "claude-companion-client",
+  "name": "afk-client",
   "version": "0.1.0",
-  "description": "React dashboard for Claude Code Companion monitoring and control",
+  "description": "React dashboard for AFK: Away From Klaude monitoring and control",
   "private": true,
   "type": "module",
   "scripts": {

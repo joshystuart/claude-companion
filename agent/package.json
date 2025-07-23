@@ -1,10 +1,10 @@
 {
-  "name": "claude-companion-agent",
+  "name": "afk-agent",
   "version": "0.1.0",
-  "description": "NPM-installable hook installer for Claude Code monitoring",
+  "description": "NPM-installable hook installer for AFK: Away From Klaude monitoring",
   "main": "dist/index.js",
   "bin": {
-    "claude-companion-agent": "./bin/claude-companion-agent"
+    "afk-agent": "./bin/afk-agent"
   },
   "scripts": {
     "build": "tsc",
@@ -46,7 +46,7 @@
     "monitoring",
     "cli"
   ],
-  "author": "Claude Code Companion",
+  "author": "AFK: Away From Klaude",
   "license": "MIT",
   "preferGlobal": true
 }

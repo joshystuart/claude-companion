@@ -1,6 +1,6 @@
-# Claude Code Companion
+# AFK: Away From Klaude
 
-A remote monitoring and control system for Claude Code sessions that leverages Claude's native hooks system to provide real-time visibility and control over AI-powered development workflows from any device.
+**AFK: Away From Klaude** - A remote monitoring and control system for Claude Code sessions. The name is a playful take on "Away From Keyboard" - now you can go "Away From Klaude" while still maintaining full control over your AI development workflows from any device.
 
 ## 🚀 Quick Start
 
@@ -8,12 +8,12 @@ A remote monitoring and control system for Claude Code sessions that leverages C
 
 1. **Install the agent globally**:
    ```bash
-   npm install -g claude-companion-agent
+   npm install -g afk-agent
    ```
 
 2. **Install hooks** (pointing to hosted dashboard):
    ```bash
-   claude-companion-agent install --server-url https://your-dashboard.com
+   afk-agent install --server-url https://your-dashboard.com
    ```
 
 3. **Open the dashboard** and monitor your Claude Code sessions in real-time!
@@ -22,8 +22,8 @@ A remote monitoring and control system for Claude Code sessions that leverages C
 
 1. **Clone and install**:
    ```bash
-   git clone https://github.com/your-org/claude-code-companion.git
-   cd claude-code-companion
+   git clone https://github.com/your-org/afk-away-from-klaude.git
+   cd afk-away-from-klaude
    npm install
    ```
 
@@ -39,7 +39,7 @@ A remote monitoring and control system for Claude Code sessions that leverages C
 3. **Install the agent**:
    ```bash
    cd agent && npm link
-   claude-companion-agent install --server-url http://localhost:3000
+   afk-agent install --server-url http://localhost:3000
    ```
 
 4. **Open the dashboard** at `http://localhost:3001`
@@ -64,7 +64,7 @@ A remote monitoring and control system for Claude Code sessions that leverages C
 
 ### Three-Package Monorepo Structure
 ```
-claude-code-companion/
+afk-away-from-klaude/
 ├── agent/          # NPM-installable hook installer
 ├── server/         # NestJS API server + real-time streaming
 └── client/         # React dashboard for monitoring/control
@@ -81,10 +81,10 @@ The agent installs lightweight shell commands in Claude Code's `~/.claude/settin
 ```json
 {
   "hooks": {
-    "pre_tool_use": "node /path/to/claude-companion-agent/dist/hooks/pre-tool-use.js ...",
-    "post_tool_use": "node /path/to/claude-companion-agent/dist/hooks/post-tool-use.js ...",
-    "stop": "node /path/to/claude-companion-agent/dist/hooks/stop.js ...",
-    "notification": "node /path/to/claude-companion-agent/dist/hooks/notification.js ..."
+    "pre_tool_use": "node /path/to/afk-agent/dist/hooks/pre-tool-use.js ...",
+    "post_tool_use": "node /path/to/afk-agent/dist/hooks/post-tool-use.js ...",
+    "stop": "node /path/to/afk-agent/dist/hooks/stop.js ...",
+    "notification": "node /path/to/afk-agent/dist/hooks/notification.js ..."
   }
 }
 ```
@@ -120,7 +120,7 @@ The agent installs lightweight shell commands in Claude Code's `~/.claude/settin
    ```bash
    cd agent
    npm link
-   claude-companion-agent install --server-url http://localhost:3000
+   afk-agent install --server-url http://localhost:3000
    ```
 
 5. **Test the integration**:
@@ -147,13 +147,13 @@ The agent installs lightweight shell commands in Claude Code's `~/.claude/settin
 
 ```bash
 # Install hooks
-claude-companion-agent install [options]
+afk-agent install [options]
 
 # Check installation status  
-claude-companion-agent status
+afk-agent status
 
 # Uninstall hooks
-claude-companion-agent uninstall
+afk-agent uninstall
 ```
 
 **Options**:
@@ -237,7 +237,7 @@ NODE_ENV=development
 
 2. **Global installation**:
    ```bash
-   npm install -g claude-companion-agent
+   npm install -g afk-agent
    ```
 
 ## 🔒 Security
@@ -292,12 +292,12 @@ MIT License - see [LICENSE](LICENSE) file for details.
 
 ## 🆘 Support
 
-- **Issues**: [GitHub Issues](https://github.com/your-org/claude-code-companion/issues)
+- **Issues**: [GitHub Issues](https://github.com/your-org/afk-away-from-klaude/issues)
 - **Documentation**: This README and inline code comments
-- **Community**: [Discussions](https://github.com/your-org/claude-code-companion/discussions)
+- **Community**: [Discussions](https://github.com/your-org/afk-away-from-klaude/discussions)
 
 ---
 
 **This is Phase 1 - Monitoring Only**. Remote control features (approve/deny, context injection, session control) will be available in Phase 2.
 
-Built with ❤️ for the Claude Code community.
+Built with ❤️ for the Claude Code community. Go AFK without losing control!

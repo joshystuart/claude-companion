@@ -53,7 +53,7 @@ export function Layout({ children }: LayoutProps) {
               <Activity className="w-8 h-8 text-primary-600" />
               <div>
                 <h1 className="text-xl font-semibold text-gray-900">
-                  Claude Code Companion
+                  AFK: Away From Klaude
                 </h1>
                 <p className="text-sm text-gray-500">
                   Remote monitoring dashboard

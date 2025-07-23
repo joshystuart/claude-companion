@@ -1,29 +1,29 @@
-# Claude Companion Agent
+# AFK Agent
 
-NPM-installable hook installer for Claude Code monitoring. This package installs lightweight hooks into Claude Code's settings to enable remote monitoring of your AI development sessions.
+NPM-installable hook installer for AFK: Away From Klaude monitoring. This package installs lightweight hooks into Claude Code's settings to enable remote monitoring of your AI development sessions while you're AFK.
 
 ## 🚀 Quick Installation
 
 ### Global Installation
 
 ```bash
-npm install -g claude-companion-agent
+npm install -g afk-agent
 ```
 
 ### Setup Hooks
 
 ```bash
 # Connect to hosted dashboard
-claude-companion-agent install --server-url https://companion.example.com
+afk-agent install --server-url https://afk.example.com
 
 # Or connect to local development server
-claude-companion-agent install --server-url http://localhost:3000
+afk-agent install --server-url http://localhost:3000
 ```
 
 ### Verify Installation
 
 ```bash
-claude-companion-agent status
+afk-agent status
 ```
 
 ## 📋 Commands
@@ -32,7 +32,7 @@ claude-companion-agent status
 Installs Claude Code hooks for monitoring.
 
 ```bash
-claude-companion-agent install [options]
+afk-agent install [options]
 ```
 
 **Options:**
@@ -42,14 +42,14 @@ claude-companion-agent install [options]
 
 **Example:**
 ```bash
-claude-companion-agent install --server-url https://dashboard.company.com --agent-id my-dev-machine
+afk-agent install --server-url https://dashboard.company.com --agent-id my-dev-machine
 ```
 
 ### `status`
 Check installation status and configuration.
 
 ```bash
-claude-companion-agent status
+afk-agent status
 ```
 
 **Output:**
@@ -60,7 +60,7 @@ claude-companion-agent status
 Remove Claude Code hooks.
 
 ```bash
-claude-companion-agent uninstall
+afk-agent uninstall
 ```
 
 This removes all hooks from `~/.claude/settings.json` and cleans up configuration files.
@@ -95,7 +95,7 @@ Each hook:
 The installer creates shell commands like:
 
 ```bash
-node "/usr/local/lib/node_modules/claude-companion-agent/dist/hooks/pre-tool-use.js" \
+node "/usr/local/lib/node_modules/afk-agent/dist/hooks/pre-tool-use.js" \
   "https://dashboard.company.com" \
   "my-agent-id" \
   "optional-auth-token"
@@ -107,8 +107,8 @@ node "/usr/local/lib/node_modules/claude-companion-agent/dist/hooks/pre-tool-use
 
 ```bash
 # Clone the repository
-git clone https://github.com/your-org/claude-code-companion.git
-cd claude-code-companion/agent
+git clone https://github.com/your-org/afk-away-from-klaude.git
+cd afk-away-from-klaude/agent
 
 # Install dependencies
 npm install
@@ -120,7 +120,7 @@ npm run build
 npm link
 
 # Test installation
-claude-companion-agent install --server-url http://localhost:3000
+afk-agent install --server-url http://localhost:3000
 ```
 
 ### Package Structure
@@ -139,7 +139,7 @@ agent/
 │   └── utils/
 │       └── hook-utils.ts   # Shared hook utilities
 ├── bin/
-│   └── claude-companion-agent  # Executable script
+│   └── afk-agent  # Executable script
 └── package.json
 ```
 
@@ -147,10 +147,10 @@ agent/
 
 ### Common Issues
 
-**"Command not found: claude-companion-agent"**
-- Ensure global installation: `npm install -g claude-companion-agent`
+**"Command not found: afk-agent"**
+- Ensure global installation: `npm install -g afk-agent`
 - Check npm global path: `npm config get prefix`
-- Try reinstalling: `npm uninstall -g claude-companion-agent && npm install -g claude-companion-agent`
+- Try reinstalling: `npm uninstall -g claude-companion-agent && npm install -g afk-agent`
 
 **"No Claude settings.json found"**
 - Run Claude Code at least once to create `~/.claude/` directory
@@ -162,7 +162,7 @@ agent/
 - Check firewall/proxy settings
 
 **"Events not appearing in dashboard"**
-- Verify agent status: `claude-companion-agent status`
+- Verify agent status: `afk-agent status`
 - Check server logs for incoming hook events
 - Test hook execution: Run a simple Claude Code command
 
@@ -173,7 +173,7 @@ For debugging, you can manually test hook commands:
 ```bash
 # Test pre-tool-use hook
 echo '{"tool":"Read","args":{"file_path":"test.txt"}}' | \
-node /usr/local/lib/node_modules/claude-companion-agent/dist/hooks/pre-tool-use.js \
+node /usr/local/lib/node_modules/afk-agent/dist/hooks/pre-tool-use.js \
   http://localhost:3000 your-agent-id
 ```
 
@@ -183,7 +183,7 @@ node /usr/local/lib/node_modules/claude-companion-agent/dist/hooks/pre-tool-use.
 ```json
 {
   "hooks": {
-    "pre_tool_use": "node /path/to/claude-companion-agent/dist/hooks/pre-tool-use.js ...",
+    "pre_tool_use": "node /path/to/afk-agent/dist/hooks/pre-tool-use.js ...",
     "post_tool_use": "...",
     "stop": "...",
     "notification": "..."
@@ -223,4 +223,4 @@ MIT License - see [LICENSE](../LICENSE) file for details.
 
 ---
 
-Part of the [Claude Code Companion](../README.md) monitoring system.
+Part of the [AFK: Away From Klaude](../README.md) monitoring system.

@@ -1,7 +1,7 @@
 {
-  "name": "claude-code-companion",
+  "name": "afk-away-from-klaude",
   "version": "0.1.0",
-  "description": "Remote monitoring and control system for Claude Code sessions",
+  "description": "AFK: Away From Klaude - Remote monitoring and control system for Claude Code sessions",
   "private": true,
   "workspaces": [
     "agent",
@@ -35,10 +35,10 @@
     "hooks",
     "development-tools"
   ],
-  "author": "Claude Code Companion",
+  "author": "AFK: Away From Klaude",
   "license": "MIT",
   "repository": {
     "type": "git",
-    "url": "https://github.com/your-org/claude-code-companion.git"
+    "url": "https://github.com/your-org/afk-away-from-klaude.git"
   }
 }

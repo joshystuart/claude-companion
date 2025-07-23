@@ -7,4 +7,3 @@
   - Then it should animate to move into the regular list when the next event comes in.
 - Reduce the vertical space of the elements at the top of the page, to maximise the vertical space for the events list.
 - The File Edit card should have the before and after text stacked vertically, with the before text on top.
-- 
