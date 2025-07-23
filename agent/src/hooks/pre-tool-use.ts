@@ -11,6 +11,7 @@ import {
   checkForInterrupt
 } from '../utils/hook-utils';
 import { HookEvent, HookResponse } from '../types';
+import { getAgentContext } from '../utils/context';
 
 async function main() {
   const [serverUrl, agentId, token] = process.argv.slice(2);
@@ -44,11 +45,14 @@ async function main() {
     const toolData = parseStdinData();
     require('fs').appendFileSync('/tmp/claude-companion-debug.log', `[${new Date().toISOString()}] Parsed tool data: ${JSON.stringify(toolData)}\n`);
     
+    // Get enhanced agent context
+    const context = getAgentContext();
+    
     // Create session ID (in real implementation, we might maintain session state)
     const sessionId = process.env.CLAUDE_SESSION_ID || generateSessionId();
     
     const event: HookEvent = {
-      agentId,
+      agentId: context.agentId, // Use auto-generated agent ID
       sessionId,
       hookType: 'pre_tool_use',
       timestamp: new Date().toISOString(),
@@ -59,6 +63,13 @@ async function main() {
         transcriptPath: toolData.transcript_path,
         cwd: toolData.cwd,
         rawInput: toolData,
+        // Enhanced context
+        computerId: context.computerId,
+        computerName: context.computerName,
+        hostname: context.hostname,
+        platform: context.platform,
+        agentName: context.agentName,
+        workingDirectory: context.workingDirectory,
       },
     };
 
@@ -66,10 +77,10 @@ async function main() {
     require('fs').appendFileSync('/tmp/claude-companion-debug.log', `[${new Date().toISOString()}] Sending event: ${JSON.stringify(event)}\n`);
     
     // Send event to server first (for monitoring)
-    await sendHookEvent(serverUrl, agentId, event, token);
+    await sendHookEvent(serverUrl, context.agentId, event, token);
     
     // Phase 2: Check for pending commands and process them
-    const finalResponse = await processWithCommandChecking(serverUrl, agentId, sessionId, token);
+    const finalResponse = await processWithCommandChecking(serverUrl, context.agentId, sessionId, token);
     
     // Log final response
     require('fs').appendFileSync('/tmp/claude-companion-debug.log', `[${new Date().toISOString()}] Final response: ${JSON.stringify(finalResponse)}\n`);

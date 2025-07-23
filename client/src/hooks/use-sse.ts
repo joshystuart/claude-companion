@@ -6,6 +6,7 @@ import toast from 'react-hot-toast';
 
 export function useSSE(agentId?: string) {
   const [client, setClient] = useState<SSEClient | null>(null);
+  const [reconnectAttempts, setReconnectAttempts] = useState(0);
   const clientRef = useRef<SSEClient | null>(null);
   
   const {
@@ -20,14 +21,34 @@ export function useSSE(agentId?: string) {
     clientRef.current = sseClient;
     setClient(sseClient);
 
-    // Subscribe to events
-    const unsubscribe = sseClient.subscribe((data: EventStreamData) => {
-      switch (data.type) {
+    // Subscribe to connection status changes
+    const unsubscribeStatus = sseClient.onStatusChange((status) => {
+      switch (status) {
+        case 'connecting':
+          setConnectionStatus('connecting');
+          break;
         case 'connected':
           setConnectionStatus('connected');
           toast.success('Connected to event stream');
+          setReconnectAttempts(0);
           break;
-          
+        case 'reconnecting':
+          const attempts = sseClient.getReconnectAttempts();
+          setReconnectAttempts(attempts);
+          if (attempts === 1) {
+            toast.error('Connection lost, attempting to reconnect...');
+          }
+          setConnectionStatus('connecting'); // Map to existing status
+          break;
+        case 'disconnected':
+          setConnectionStatus('disconnected');
+          break;
+      }
+    });
+
+    // Subscribe to events
+    const unsubscribeEvents = sseClient.subscribe((data: EventStreamData) => {
+      switch (data.type) {
         case 'hook_event':
           const hookEvent = data.data as HookEvent;
           addEvent(hookEvent);
@@ -50,12 +71,12 @@ export function useSSE(agentId?: string) {
     });
 
     // Connect to server
-    setConnectionStatus('connecting');
     sseClient.connect(agentId);
 
     // Cleanup on unmount
     return () => {
-      unsubscribe();
+      unsubscribeStatus();
+      unsubscribeEvents();
       sseClient.disconnect();
       clientRef.current = null;
     };
@@ -76,10 +97,13 @@ export function useSSE(agentId?: string) {
   };
 
   const connectionState = client?.getConnectionState() || 'closed';
+  const status = client?.getStatus() || 'disconnected';
 
   return {
     client,
     connectionState,
+    status,
+    reconnectAttempts,
     disconnect,
     reconnect,
   };

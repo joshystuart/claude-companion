@@ -1,22 +1,74 @@
 import { Injectable, Logger } from '@nestjs/common';
 import { HookEventDto } from './dto/hook-event.dto';
-import { HookResponse, Agent } from '../libs/types';
+import { HookResponse } from '../libs/types';
 import { EventsService } from '../events/events.service';
+import { StorageService } from '../modules/storage/storage.service';
+import { Agent } from '../modules/storage/entities/computer.entity';
 
 @Injectable()
 export class HooksService {
   private readonly logger = new Logger(HooksService.name);
-  private agents = new Map<string, Agent>();
+  private sessionTimeoutInterval: NodeJS.Timeout;
 
-  constructor(private readonly eventsService: EventsService) {}
+  constructor(
+    private readonly eventsService: EventsService,
+    private readonly storageService: StorageService,
+  ) {
+    // Check for session timeouts every minute
+    this.sessionTimeoutInterval = setInterval(() => {
+      this.storageService.checkSessionTimeout();
+    }, 60 * 1000);
+  }
+
+  onModuleDestroy() {
+    if (this.sessionTimeoutInterval) {
+      clearInterval(this.sessionTimeoutInterval);
+    }
+  }
 
   async processHookEvent(hookEvent: HookEventDto, token?: string): Promise<HookResponse> {
     this.logger.log(`Processing ${hookEvent.hookType} from agent ${hookEvent.agentId}`);
 
     try {
-      // Update agent status
-      this.updateAgent(hookEvent.agentId, hookEvent.sessionId);
-
+      // Extract enhanced context from hookEvent
+      const { computerId, computerName, hostname, platform, agentName, workingDirectory } = hookEvent.data || {};
+      
+      // Create or update computer
+      if (computerId) {
+        this.storageService.findOrCreateComputer(
+          computerId,
+          computerName || hostname || computerId,
+          hostname || 'unknown',
+          platform || 'unknown'
+        );
+      }
+      
+      // Create or update agent with context
+      const agent = this.storageService.findOrCreateAgent(
+        computerId || 'default',
+        hookEvent.agentId,
+        agentName || hookEvent.agentId,
+        workingDirectory || process.cwd()
+      );
+      
+      // Get or create session
+      let session = this.storageService.getActiveSessionForAgent(hookEvent.agentId);
+      if (!session || (workingDirectory && session.workingDirectory !== workingDirectory)) {
+        // Create new session if none exists or working directory changed
+        session = this.storageService.createSession({
+          id: hookEvent.sessionId,
+          agentId: hookEvent.agentId,
+          name: this.generateSessionName(),
+          startTime: new Date().toISOString(),
+          status: 'active',
+          workingDirectory: workingDirectory || process.cwd(),
+          eventCount: 0
+        });
+      }
+      
+      // Store the event
+      this.storageService.addEvent(session.id, hookEvent);
+      
       // Broadcast event to connected clients
       await this.eventsService.broadcastHookEvent(hookEvent);
 
@@ -43,43 +95,37 @@ export class HooksService {
   }
 
   async updateAgentHeartbeat(agentId: string, token?: string): Promise<void> {
-    this.updateAgent(agentId);
+    this.storageService.updateAgentStatus(agentId, 'active');
     this.logger.debug(`Heartbeat from agent ${agentId}`);
   }
 
-  private updateAgent(agentId: string, sessionId?: string): void {
-    const existingAgent = this.agents.get(agentId);
-    
-    const agent: Agent = {
-      id: agentId,
-      lastSeen: new Date(),
-      sessionId: sessionId || existingAgent?.sessionId,
-      status: 'active',
-    };
-
-    this.agents.set(agentId, agent);
-
-    // Broadcast agent status update
-    this.eventsService.broadcastAgentStatus(agent);
-
-    // Clean up old agents (offline for more than 5 minutes)
-    this.cleanupOldAgents();
-  }
-
-  private cleanupOldAgents(): void {
-    const fiveMinutesAgo = new Date(Date.now() - 5 * 60 * 1000);
-    
-    for (const [agentId, agent] of this.agents.entries()) {
-      if (agent.lastSeen < fiveMinutesAgo) {
-        const offlineAgent = { ...agent, status: 'offline' as const };
-        this.agents.set(agentId, offlineAgent);
-        this.eventsService.broadcastAgentStatus(offlineAgent);
-      }
-    }
+  private generateSessionName(): string {
+    const now = new Date();
+    const timeStr = now.toLocaleTimeString('en-US', { 
+      hour: 'numeric', 
+      minute: '2-digit',
+      hour12: true 
+    });
+    const dayStr = now.toLocaleDateString('en-US', { 
+      weekday: 'short',
+      month: 'short',
+      day: 'numeric' 
+    });
+    return `${dayStr} ${timeStr}`;
   }
 
   getAgents(): Agent[] {
-    return Array.from(this.agents.values());
+    // Get all agents from all computers
+    const computers = this.storageService.getAllComputers();
+    const agents: Agent[] = [];
+    
+    computers.forEach(computer => {
+      if (computer.agents) {
+        agents.push(...computer.agents);
+      }
+    });
+    
+    return agents;
   }
 
   getActiveAgents(): Agent[] {

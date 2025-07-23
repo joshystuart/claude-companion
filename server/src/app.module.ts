@@ -5,6 +5,10 @@ import { HooksModule } from './hooks/hooks.module';
 import { EventsModule } from './events/events.module';
 import { AuthModule } from './auth/auth.module';
 import { CommandsModule } from './commands/commands.module';
+import { StorageModule } from './modules/storage/storage.module';
+import { ComputersModule } from './modules/computers/computers.module';
+import { AgentsModule } from './modules/agents/agents.module';
+import { SessionsModule } from './modules/sessions/sessions.module';
 
 @Module({
   imports: [
@@ -21,6 +25,10 @@ import { CommandsModule } from './commands/commands.module';
     }),
 
     // Feature modules
+    StorageModule,
+    ComputersModule,
+    AgentsModule,
+    SessionsModule,
     HooksModule,
     EventsModule,
     CommandsModule,

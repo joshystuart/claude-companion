@@ -28,5 +28,12 @@ export class HookEventDto {
     suggestedAction?: string;
     context?: string[];
     rawInput?: any;
+    // Enhanced context from Phase 2.1
+    computerId?: string;
+    computerName?: string;
+    hostname?: string;
+    platform?: string;
+    agentName?: string;
+    workingDirectory?: string;
   };
 }

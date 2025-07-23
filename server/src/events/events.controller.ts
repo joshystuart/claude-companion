@@ -36,15 +36,10 @@ export class EventsController {
     res.on('finish', cleanup);
   }
 
-  @Get('agents')
-  async getAgents(
+  @Get('status')
+  async getConnectionStatus(
     @Headers('authorization') authHeader?: string,
   ) {
-    // For Phase 1, return all agents (no auth filtering)
-    // Phase 2 will add proper authentication and filtering
-    return {
-      agents: this.eventsService.getAgents(),
-      timestamp: new Date().toISOString(),
-    };
+    return this.eventsService.getConnectionStatus();
   }
 }

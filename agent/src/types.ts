@@ -12,6 +12,13 @@ export interface HookEvent {
     transcriptPath?: string;
     cwd?: string;
     rawInput?: any;
+    // Enhanced context fields
+    computerId?: string;
+    computerName?: string;
+    hostname?: string;
+    platform?: string;
+    agentName?: string;
+    workingDirectory?: string;
   };
 }
 

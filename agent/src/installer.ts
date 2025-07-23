@@ -3,10 +3,11 @@ import { join } from 'path';
 import { homedir } from 'os';
 import chalk from 'chalk';
 import ora from 'ora';
+import { getAgentContext } from './utils/context';
 
 export interface AgentConfig {
   serverUrl: string;
-  agentId: string;
+  computerName?: string;
   token?: string;
 }
 
@@ -46,14 +47,18 @@ export async function installHooks(config: AgentConfig): Promise<void> {
     // Get the path to our hook executables
     const hookBasePath = getHookExecutablePath();
     
+    // Set environment variable for computer name if provided
+    const envVars = config.computerName ? `CLAUDE_COMPUTER_NAME="${config.computerName}" ` : '';
+    
     // Install hook commands using the new array format
+    // Note: agentId is now auto-generated in the hooks themselves
     settings.hooks = {
       PreToolUse: [
         {
           hooks: [
             {
               type: "command",
-              command: `node "${join(hookBasePath, 'pre-tool-use.js')}" "${config.serverUrl}" "${config.agentId}" "${config.token || ''}"`
+              command: `${envVars}node "${join(hookBasePath, 'pre-tool-use.js')}" "${config.serverUrl}" "auto-generated" "${config.token || ''}"`
             }
           ]
         }
@@ -63,7 +68,7 @@ export async function installHooks(config: AgentConfig): Promise<void> {
           hooks: [
             {
               type: "command",
-              command: `node "${join(hookBasePath, 'post-tool-use.js')}" "${config.serverUrl}" "${config.agentId}" "${config.token || ''}"`
+              command: `${envVars}node "${join(hookBasePath, 'post-tool-use.js')}" "${config.serverUrl}" "auto-generated" "${config.token || ''}"`
             }
           ]
         }
@@ -73,7 +78,7 @@ export async function installHooks(config: AgentConfig): Promise<void> {
           hooks: [
             {
               type: "command",
-              command: `node "${join(hookBasePath, 'stop.js')}" "${config.serverUrl}" "${config.agentId}" "${config.token || ''}"`
+              command: `${envVars}node "${join(hookBasePath, 'stop.js')}" "${config.serverUrl}" "auto-generated" "${config.token || ''}"`
             }
           ]
         }
@@ -83,7 +88,7 @@ export async function installHooks(config: AgentConfig): Promise<void> {
           hooks: [
             {
               type: "command",
-              command: `node "${join(hookBasePath, 'notification.js')}" "${config.serverUrl}" "${config.agentId}" "${config.token || ''}"`
+              command: `${envVars}node "${join(hookBasePath, 'notification.js')}" "${config.serverUrl}" "auto-generated" "${config.token || ''}"`
             }
           ]
         }
@@ -98,7 +103,11 @@ export async function installHooks(config: AgentConfig): Promise<void> {
     writeFileSync(COMPANION_CONFIG_FILE, JSON.stringify(config, null, 2));
     spinner.text = 'Saved companion configuration';
 
-    spinner.succeed('Hooks installed successfully');
+    // Display context information
+    const context = getAgentContext();
+    spinner.succeed(`Hooks installed successfully for agent: ${context.agentName} (${context.agentId})`);
+    console.log(chalk.gray(`  Computer: ${context.computerName}`));
+    console.log(chalk.gray(`  Working Directory: ${context.workingDirectory}`));
     
   } catch (error) {
     spinner.fail('Installation failed');

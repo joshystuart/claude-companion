@@ -1,6 +1,7 @@
 import { Injectable, Logger } from '@nestjs/common';
 import { Response } from 'express';
-import { HookEvent, Agent, EventStreamData, RemoteCommand } from '../libs/types';
+import { HookEvent, EventStreamData, RemoteCommand } from '../libs/types';
+import { Computer, Agent, Session } from '../modules/storage/entities/computer.entity';
 
 interface SSEClient {
   id: string;
@@ -84,6 +85,38 @@ export class EventsService {
     };
 
     this.addToHistory(eventData);
+    await this.broadcast(eventData);
+  }
+
+  async broadcastComputerUpdate(computer: Computer): Promise<void> {
+    const eventData: EventStreamData = {
+      type: 'computer_update',
+      data: computer,
+      timestamp: new Date().toISOString(),
+    };
+
+    this.addToHistory(eventData);
+    await this.broadcast(eventData);
+  }
+
+  async broadcastSessionUpdate(session: Session): Promise<void> {
+    const eventData: EventStreamData = {
+      type: 'session_update',
+      data: session,
+      timestamp: new Date().toISOString(),
+    };
+
+    this.addToHistory(eventData);
+    await this.broadcast(eventData);
+  }
+
+  async broadcastHierarchyUpdate(): Promise<void> {
+    const eventData: EventStreamData = {
+      type: 'hierarchy_update',
+      data: { message: 'Hierarchy structure updated' },
+      timestamp: new Date().toISOString(),
+    };
+
     await this.broadcast(eventData);
   }
 
@@ -172,10 +205,13 @@ export class EventsService {
     return `client-${timestamp}-${random}`;
   }
 
-  getAgents(): Agent[] {
-    // This will be implemented by the HooksService
-    // For now, return empty array
-    return [];
+  // Method to get connection status for monitoring
+  getConnectionStatus() {
+    return {
+      connectedClients: this.clients.size,
+      eventHistorySize: this.eventHistory.length,
+      timestamp: new Date().toISOString()
+    };
   }
 
   getConnectedClientsCount(): number {

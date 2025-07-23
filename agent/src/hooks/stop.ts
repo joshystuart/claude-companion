@@ -11,6 +11,7 @@ import {
   checkForInterrupt
 } from '../utils/hook-utils';
 import { HookEvent, HookResponse } from '../types';
+import { getAgentContext } from '../utils/context';
 
 async function main() {
   const [serverUrl, agentId, token] = process.argv.slice(2);
@@ -21,8 +22,11 @@ async function main() {
   }
 
   try {
+    // Get enhanced agent context
+    const context = getAgentContext();
+    
     // PRIORITY 1: Check for interrupt commands immediately
-    const interruptCommands = await checkForInterrupt(serverUrl, agentId, token);
+    const interruptCommands = await checkForInterrupt(serverUrl, context.agentId, token);
     if (interruptCommands.length > 0) {
       const interruptCmd = interruptCommands[0];
       await markCommandAsProcessing(serverUrl, interruptCmd.id, token);
@@ -43,21 +47,28 @@ async function main() {
     const sessionId = process.env.CLAUDE_SESSION_ID || generateSessionId();
     
     const event: HookEvent = {
-      agentId,
+      agentId: context.agentId, // Use auto-generated agent ID
       sessionId,
       hookType: 'stop',
       timestamp: new Date().toISOString(),
       data: {
         message: 'Claude session stopping',
         rawInput: stopData,
+        // Enhanced context
+        computerId: context.computerId,
+        computerName: context.computerName,
+        hostname: context.hostname,
+        platform: context.platform,
+        agentName: context.agentName,
+        workingDirectory: context.workingDirectory,
       },
     };
 
     // Send event to server first (for monitoring)
-    await sendHookEvent(serverUrl, agentId, event, token);
+    await sendHookEvent(serverUrl, context.agentId, event, token);
     
     // Phase 2: Check for session control commands (continue/stop)
-    const finalResponse = await processSessionControl(serverUrl, agentId, sessionId, token);
+    const finalResponse = await processSessionControl(serverUrl, context.agentId, sessionId, token);
     
     // Output response (might include continue instructions)
     outputHookResponse(finalResponse);

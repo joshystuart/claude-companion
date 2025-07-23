@@ -16,6 +16,13 @@ export interface HookEvent {
     suggestedAction?: string;
     context?: string[];
     rawInput?: any;
+    // Enhanced context from Phase 2.1
+    computerId?: string;
+    computerName?: string;
+    hostname?: string;
+    platform?: string;
+    agentName?: string;
+    workingDirectory?: string;
   };
 }
 
@@ -50,7 +57,7 @@ export interface RemoteCommand {
 }
 
 export interface EventStreamData {
-  type: 'hook_event' | 'agent_status' | 'command_update' | 'error';
-  data: HookEvent | Agent | RemoteCommand | { message: string };
+  type: 'hook_event' | 'agent_status' | 'command_update' | 'error' | 'computer_update' | 'session_update' | 'hierarchy_update';
+  data: any; // More flexible to support different data types
   timestamp: string;
 }
