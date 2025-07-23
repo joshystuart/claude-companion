@@ -188,13 +188,19 @@ export const NotificationEventCard: React.FC<NotificationEventCardProps> = ({
         'p-3 rounded-md mb-3 border-l-4',
         requiresApproval ? 'bg-orange-50 border-orange-400' : 'bg-gray-50 border-gray-300'
       )}>
-        <div className="font-mono text-sm text-gray-800">
-          Claude wants to {commandDetails}
+        <div className="text-sm text-gray-800">
+          {/* For tool-based events, show "Claude wants to..." format */}
+          {event.data.toolName ? (
+            <span className="font-mono">Claude wants to {commandDetails}</span>
+          ) : (
+            /* For notifications/stops, show the message directly */
+            <span>{commandDetails}</span>
+          )}
         </div>
       </div>
 
-      {/* Message Content */}
-      {event.data.message && (
+      {/* Additional Message Content (only if different from command details) */}
+      {event.data.message && event.data.toolName && (
         <div className="text-sm text-gray-600 mb-3">
           {event.data.message}
         </div>

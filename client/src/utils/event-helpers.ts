@@ -10,26 +10,36 @@ export interface EventTypeInfo {
 
 /**
  * Determines if an event represents an active/current operation
+ * Only the most recent event should be considered active
  */
-export function isEventActive(event: HookEvent): boolean {
-  // Pre-tool-use events that require approval are considered active
-  if (event.hookType === 'pre_tool_use' && event.data.requiresApproval) {
-    return true;
+export function isEventActive(event: HookEvent, allEvents: HookEvent[] = []): boolean {
+  // If no events provided, fall back to basic approval check
+  if (allEvents.length === 0) {
+    return event.hookType === 'pre_tool_use' && event.data.requiresApproval;
   }
   
-  // Events from the last 5 minutes could be considered "recent/active"
-  const fiveMinutesAgo = new Date(Date.now() - 5 * 60 * 1000);
-  const eventTime = new Date(event.timestamp);
+  // Find the most recent event for this agent
+  const agentEvents = allEvents
+    .filter(e => e.agentId === event.agentId)
+    .sort((a, b) => new Date(b.timestamp).getTime() - new Date(a.timestamp).getTime());
   
-  return event.hookType === 'pre_tool_use' && eventTime > fiveMinutesAgo;
+  const mostRecentEvent = agentEvents[0];
+  
+  // Only the most recent event can be active
+  if (event.timestamp !== mostRecentEvent?.timestamp) {
+    return false;
+  }
+  
+  // Most recent event is active if it's a pre-tool-use event
+  return event.hookType === 'pre_tool_use';
 }
 
 /**
  * Analyzes an event and returns structured information for display
  */
-export function analyzeEvent(event: HookEvent): EventTypeInfo {
+export function analyzeEvent(event: HookEvent, allEvents: HookEvent[] = []): EventTypeInfo {
   const toolName = event.data.toolName?.toLowerCase();
-  const isActive = isEventActive(event);
+  const isActive = isEventActive(event, allEvents);
 
   // Bash commands
   if (toolName === 'bash') {

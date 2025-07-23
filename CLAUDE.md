@@ -4,7 +4,7 @@ This file provides guidance to Claude Code (claude.ai/code) when working with co
 
 ## Project Overview
 
-Claude Code Companion is a remote monitoring and control system for Claude Code sessions that leverages Claude's native hooks system. It's a three-package monorepo structure designed to provide real-time visibility and control over AI-powered development workflows from any device.
+AFK: Away From Klaude is a remote monitoring and control system for Claude Code sessions that leverages Claude's native hooks system. It's a three-package monorepo structure designed to provide real-time visibility and control over AI-powered development workflows from any device.
 
 ## Architecture
 
@@ -41,7 +41,7 @@ Since no package.json or build configuration exists yet, standard development co
 
 ## Documentation Structure
 
-Primary documentation is in `docs/claude-code-companion.md` which contains the complete project specification, architecture details, and development roadmap.
+Primary documentation is in `docs/afk-away-from-klaude.md` which contains the complete project specification, architecture details, and development roadmap.
 
 
 ## CRITICAL WORKFLOW - ALWAYS FOLLOW THIS!

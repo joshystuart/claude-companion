@@ -1,4 +1,4 @@
-# Claude Code Companion - Project Overview
+# AFK: Away From Klaude - Project Overview
 
 ## The Problem
 
@@ -11,13 +11,13 @@ When using Claude Code for complex, long-running tasks, developers face a common
 
 This forces developers to stay tethered to their development environment, limiting productivity and flexibility.
 
-## The Solution: Claude Code Companion
+## The Solution: AFK: Away From Klaude
 
-A **remote monitoring and control system** for Claude Code that leverages Claude's native **hooks system** to provide real-time visibility and control over AI-powered development workflows from any device.
+A **remote monitoring and control system** for Claude Code that leverages Claude's native **hooks system** to provide real-time visibility and control over AI-powered development workflows from any device. The name "AFK" is a playful take on "Away From Keyboard" - but here you're "Away From Klaude" while still maintaining full control.
 
 ### Core Value Proposition
 
-**"Monitor and control your Claude Code sessions from anywhere - your phone, tablet, or any web browser"**
+**"Go AFK while staying in control - monitor and manage your Claude Code sessions from anywhere"**
 
 ## Why This Approach Works
 
@@ -46,7 +46,7 @@ Instead of wrapping Claude's process (complex and fragile), we use hooks that:
 ### Three-Package Monorepo Structure
 
 ```
-claude-code-companion/
+afk-away-from-klaude/
 ├── agent/          # NPM-installable hook installer
 ├── server/         # NestJS API server + real-time streaming
 └── client/         # React dashboard for monitoring/control
@@ -63,8 +63,8 @@ claude-code-companion/
 
 **Installation:**
 ```bash
-npm install -g claude-companion-agent
-claude-companion-agent install --server-url https://your-dashboard.com
+npm install -g afk-agent
+afk-agent install --server-url https://your-dashboard.com
 ```
 
 ### 2. Server Package (`./server`)
@@ -154,7 +154,7 @@ Claude: Processes feedback and suggests backup approach
 
 ```bash
 # Example PreToolUse hook command
-node /usr/local/lib/node_modules/claude-companion-agent/hook-commands.js \
+node /usr/local/lib/node_modules/afk-agent/hook-commands.js \
   pre-tool-use \
   "https://dashboard.company.com" \
   "dev-machine-1" \
@@ -261,15 +261,15 @@ node /usr/local/lib/node_modules/claude-companion-agent/hook-commands.js \
 ### For Claude Code Users
 ```bash
 # Install the agent
-npm install -g claude-companion-agent
+npm install -g afk-agent
 
 # Set up hooks pointing to hosted dashboard  
-claude-companion-agent install --server-url https://companion.dev
+afk-agent install --server-url https://afk.dev
 
 # Or run your own server locally
-git clone claude-code-companion
-cd claude-code-companion && pnpm install && pnpm dev
-claude-companion-agent install --server-url http://localhost:3000
+git clone afk-away-from-klaude
+cd afk-away-from-klaude && pnpm install && pnpm dev
+afk-agent install --server-url http://localhost:3000
 ```
 
 ### For Teams/Organizations

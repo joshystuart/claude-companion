@@ -120,12 +120,29 @@ export const useDashboardStore = create<DashboardState>((set, get) => ({
 
   getActiveEvents: () => {
     const { events } = get();
-    const fiveMinutesAgo = new Date(Date.now() - 5 * 60 * 1000);
-    return events.filter(event => {
-      const eventTime = new Date(event.timestamp);
-      return (event.hookType === 'pre_tool_use' && event.data.requiresApproval) ||
-             (event.hookType === 'pre_tool_use' && eventTime > fiveMinutesAgo);
+    
+    // Group events by agent to find the most recent for each
+    const agentGroups = events.reduce((groups, event) => {
+      if (!groups[event.agentId]) {
+        groups[event.agentId] = [];
+      }
+      groups[event.agentId].push(event);
+      return groups;
+    }, {} as Record<string, HookEvent[]>);
+    
+    // Get the most recent pre_tool_use event for each agent
+    const activeEvents: HookEvent[] = [];
+    Object.values(agentGroups).forEach(agentEvents => {
+      const sortedEvents = agentEvents.sort((a, b) => 
+        new Date(b.timestamp).getTime() - new Date(a.timestamp).getTime()
+      );
+      const mostRecent = sortedEvents[0];
+      if (mostRecent && mostRecent.hookType === 'pre_tool_use') {
+        activeEvents.push(mostRecent);
+      }
     });
+    
+    return activeEvents;
   },
 
   getEventsByType: (toolName) => {

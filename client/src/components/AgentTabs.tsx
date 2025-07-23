@@ -34,12 +34,16 @@ export const AgentTabs: React.FC<AgentTabsProps> = ({
     if (!agentId) {
       return getActiveEvents().length;
     }
-    return getAgentEvents(agentId).filter(event => {
-      const fiveMinutesAgo = new Date(Date.now() - 5 * 60 * 1000);
-      const eventTime = new Date(event.timestamp);
-      return (event.hookType === 'pre_tool_use' && event.data.requiresApproval) ||
-             (event.hookType === 'pre_tool_use' && eventTime > fiveMinutesAgo);
-    }).length;
+    // For individual agents, show 1 if they have an active event, 0 otherwise
+    const agentEvents = getAgentEvents(agentId);
+    if (agentEvents.length === 0) return 0;
+    
+    // Check if the most recent event is a pre_tool_use
+    const mostRecent = agentEvents.sort((a, b) => 
+      new Date(b.timestamp).getTime() - new Date(a.timestamp).getTime()
+    )[0];
+    
+    return (mostRecent && mostRecent.hookType === 'pre_tool_use') ? 1 : 0;
   };
 
   return (

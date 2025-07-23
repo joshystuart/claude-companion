@@ -8,10 +8,14 @@ import { HookEvent } from '@/types';
  * Extract human-readable command details from event data for approval notifications
  */
 export function getCommandDetails(event: HookEvent): string {
-  const { toolName, toolArgs } = event.data;
+  const { toolName, toolArgs, message } = event.data;
   
-  if (!toolName) {
-    return 'use unknown tool';
+  // For notification events or events without toolName, show the message content
+  if (!toolName || event.hookType === 'notification' || event.hookType === 'stop') {
+    if (message) {
+      return message;
+    }
+    return 'perform an action';
   }
 
   switch (toolName.toLowerCase()) {
@@ -85,10 +89,17 @@ export function getCommandDetails(event: HookEvent): string {
  * Get a user-friendly description of what the command will do
  */
 export function getCommandDescription(event: HookEvent): string {
-  const { toolName, toolArgs } = event.data;
+  const { toolName, toolArgs, message } = event.data;
   
-  if (!toolName) {
-    return 'Claude wants to perform an unknown action';
+  // For notification events or events without toolName, show appropriate message
+  if (!toolName || event.hookType === 'notification' || event.hookType === 'stop') {
+    if (event.hookType === 'stop') {
+      return 'Claude session has stopped';
+    }
+    if (event.hookType === 'notification') {
+      return message || 'Claude has sent a notification';
+    }
+    return 'Claude wants to perform an action';
   }
 
   switch (toolName.toLowerCase()) {
@@ -190,7 +201,14 @@ export function getCommandRiskLevel(event: HookEvent): 'low' | 'medium' | 'high'
 export function getCommandIcon(event: HookEvent): string {
   const { toolName } = event.data;
   
+  // Handle events without toolName
   if (!toolName) {
+    if (event.hookType === 'stop') {
+      return '⏹️';
+    }
+    if (event.hookType === 'notification') {
+      return '💬';
+    }
     return '❓';
   }
 
