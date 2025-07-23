@@ -9,8 +9,8 @@ import { version } from '../package.json';
 const program = new Command();
 
 program
-  .name('claude-companion-agent')
-  .description('Claude Code Companion Agent - Remote monitoring hooks installer')
+  .name('afk-agent')
+  .description('Away From Klaude Agent - Remote monitoring hooks installer for claude code')
   .version(version);
 
 program
