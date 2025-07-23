@@ -33,14 +33,25 @@ export class HooksService {
       // Extract enhanced context from hookEvent
       const { computerId, computerName, hostname, platform, agentName, workingDirectory } = hookEvent.data || {};
       
+      // Debug logging
+      this.logger.debug(`Enhanced context extracted:`, {
+        computerId,
+        computerName,
+        hostname,
+        platform,
+        agentName,
+        workingDirectory
+      });
+      
       // Create or update computer
       if (computerId) {
-        this.storageService.findOrCreateComputer(
+        const computer = this.storageService.findOrCreateComputer(
           computerId,
           computerName || hostname || computerId,
           hostname || 'unknown',
           platform || 'unknown'
         );
+        this.logger.debug(`Computer created/updated:`, computer);
       }
       
       // Create or update agent with context
@@ -50,6 +61,7 @@ export class HooksService {
         agentName || hookEvent.agentId,
         workingDirectory || process.cwd()
       );
+      this.logger.debug(`Agent created/updated:`, agent);
       
       // Get or create session
       let session = this.storageService.getActiveSessionForAgent(hookEvent.agentId);
@@ -68,6 +80,14 @@ export class HooksService {
       
       // Store the event
       this.storageService.addEvent(session.id, hookEvent);
+      
+      // Broadcast agent status update for dashboard compatibility
+      await this.eventsService.broadcastAgentStatus({
+        id: agent.id,
+        lastSeen: new Date(agent.lastActivity),
+        sessionId: session.id,
+        status: agent.status
+      });
       
       // Broadcast event to connected clients
       await this.eventsService.broadcastHookEvent(hookEvent);

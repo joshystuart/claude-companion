@@ -1,2 +1,115 @@
 export interface QueuedCommand {
-  command: any;\n  timestamp: number;\n  retries: number;\n  id: string;\n}\n\nexport interface OfflineCommandQueue {\n  enqueue(command: any): string;\n  flush(): Promise<void>;\n  clear(): void;\n  getQueueSize(): number;\n  getPendingCommands(): QueuedCommand[];\n}\n\nclass OfflineCommandQueueImpl implements OfflineCommandQueue {\n  private queue: QueuedCommand[] = [];\n  private maxRetries = 3;\n  private isFlushingQueue = false;\n\n  enqueue(command: any): string {\n    const id = this.generateId();\n    const queuedCommand: QueuedCommand = {\n      command,\n      timestamp: Date.now(),\n      retries: 0,\n      id\n    };\n    \n    this.queue.push(queuedCommand);\n    console.log(`Command queued for offline: ${id}`);\n    \n    return id;\n  }\n\n  async flush(): Promise<void> {\n    if (this.isFlushingQueue || this.queue.length === 0) {\n      return;\n    }\n\n    this.isFlushingQueue = true;\n    console.log(`Flushing ${this.queue.length} queued commands...`);\n\n    const commandsToProcess = [...this.queue];\n    \n    for (const item of commandsToProcess) {\n      try {\n        await this.sendCommand(item.command);\n        \n        // Remove from queue on success\n        this.queue = this.queue.filter(q => q.id !== item.id);\n        console.log(`Successfully sent queued command: ${item.id}`);\n        \n      } catch (error) {\n        item.retries++;\n        console.warn(`Failed to send command ${item.id} (attempt ${item.retries}):`, error);\n        \n        if (item.retries >= this.maxRetries) {\n          // Discard after max retries\n          this.queue = this.queue.filter(q => q.id !== item.id);\n          console.error(`Discarding command ${item.id} after ${this.maxRetries} failed attempts`);\n        }\n      }\n    }\n\n    this.isFlushingQueue = false;\n  }\n\n  clear(): void {\n    this.queue = [];\n    console.log('Command queue cleared');\n  }\n\n  getQueueSize(): number {\n    return this.queue.length;\n  }\n\n  getPendingCommands(): QueuedCommand[] {\n    return [...this.queue];\n  }\n\n  private async sendCommand(command: any): Promise<void> {\n    const response = await fetch('/api/commands', {\n      method: 'POST',\n      headers: {\n        'Content-Type': 'application/json',\n      },\n      body: JSON.stringify(command),\n    });\n\n    if (!response.ok) {\n      throw new Error(`HTTP ${response.status}: ${response.statusText}`);\n    }\n  }\n\n  private generateId(): string {\n    const timestamp = Date.now().toString(36);\n    const random = Math.random().toString(36).substring(2, 8);\n    return `cmd-${timestamp}-${random}`;\n  }\n}\n\n// Create singleton instance\nlet instance: OfflineCommandQueue | null = null;\n\nexport function getOfflineCommandQueue(): OfflineCommandQueue {\n  if (!instance) {\n    instance = new OfflineCommandQueueImpl();\n  }\n  return instance;\n}\n\nexport function createOfflineCommandQueue(): OfflineCommandQueue {\n  return new OfflineCommandQueueImpl();\n}
+  command: any;
+  timestamp: number;
+  retries: number;
+  id: string;
+}
+
+export interface OfflineCommandQueue {
+  enqueue(command: any): string;
+  flush(): Promise<void>;
+  clear(): void;
+  getQueueSize(): number;
+  getPendingCommands(): QueuedCommand[];
+}
+
+class OfflineCommandQueueImpl implements OfflineCommandQueue {
+  private queue: QueuedCommand[] = [];
+  private maxRetries = 3;
+  private isFlushingQueue = false;
+
+  enqueue(command: any): string {
+    const id = this.generateId();
+    const queuedCommand: QueuedCommand = {
+      command,
+      timestamp: Date.now(),
+      retries: 0,
+      id
+    };
+    
+    this.queue.push(queuedCommand);
+    console.log(`Command queued for offline: ${id}`);
+    
+    return id;
+  }
+
+  async flush(): Promise<void> {
+    if (this.isFlushingQueue || this.queue.length === 0) {
+      return;
+    }
+
+    this.isFlushingQueue = true;
+    console.log(`Flushing ${this.queue.length} queued commands...`);
+
+    const commandsToProcess = [...this.queue];
+    
+    for (const item of commandsToProcess) {
+      try {
+        await this.sendCommand(item.command);
+        
+        // Remove from queue on success
+        this.queue = this.queue.filter(q => q.id !== item.id);
+        console.log(`Successfully sent queued command: ${item.id}`);
+        
+      } catch (error) {
+        item.retries++;
+        console.warn(`Failed to send command ${item.id} (attempt ${item.retries}):`, error);
+        
+        if (item.retries >= this.maxRetries) {
+          // Discard after max retries
+          this.queue = this.queue.filter(q => q.id !== item.id);
+          console.error(`Discarding command ${item.id} after ${this.maxRetries} failed attempts`);
+        }
+      }
+    }
+
+    this.isFlushingQueue = false;
+  }
+
+  clear(): void {
+    this.queue = [];
+    console.log('Command queue cleared');
+  }
+
+  getQueueSize(): number {
+    return this.queue.length;
+  }
+
+  getPendingCommands(): QueuedCommand[] {
+    return [...this.queue];
+  }
+
+  private async sendCommand(command: any): Promise<void> {
+    const response = await fetch('/api/commands', {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+      },
+      body: JSON.stringify(command),
+    });
+
+    if (!response.ok) {
+      throw new Error(`HTTP ${response.status}: ${response.statusText}`);
+    }
+  }
+
+  private generateId(): string {
+    const timestamp = Date.now().toString(36);
+    const random = Math.random().toString(36).substring(2, 8);
+    return `cmd-${timestamp}-${random}`;
+  }
+}
+
+// Create singleton instance
+let instance: OfflineCommandQueue | null = null;
+
+export function getOfflineCommandQueue(): OfflineCommandQueue {
+  if (!instance) {
+    instance = new OfflineCommandQueueImpl();
+  }
+  return instance;
+}
+
+export function createOfflineCommandQueue(): OfflineCommandQueue {
+  return new OfflineCommandQueueImpl();
+}
