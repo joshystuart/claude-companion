@@ -163,6 +163,43 @@ export async function completeCommand(
   }
 }
 
+export async function checkForInterrupt(
+  serverUrl: string,
+  agentId: string,
+  token?: string,
+  timeoutMs = 200 // Very fast check for interrupts
+): Promise<any[]> {
+  const controller = new AbortController();
+  const timeoutId = setTimeout(() => controller.abort(), timeoutMs);
+
+  try {
+    const headers: Record<string, string> = {};
+    
+    if (token) {
+      headers['Authorization'] = `Bearer ${token}`;
+    }
+
+    const response = await fetch(`${serverUrl}/api/commands/${agentId}/interrupt`, {
+      method: 'GET',
+      headers,
+      signal: controller.signal,
+    });
+
+    clearTimeout(timeoutId);
+
+    if (!response.ok) {
+      return []; // No interrupts if server error
+    }
+
+    const commands = await response.json();
+    return Array.isArray(commands) ? commands : [];
+
+  } catch (error) {
+    clearTimeout(timeoutId);
+    return []; // No interrupts if error
+  }
+}
+
 export function outputHookResponse(response: HookResponse): void {
   // Claude Code expects JSON response on stdout
   console.log(JSON.stringify(response));

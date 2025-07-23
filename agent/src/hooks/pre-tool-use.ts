@@ -7,7 +7,8 @@ import {
   generateSessionId,
   checkForPendingCommands,
   markCommandAsProcessing,
-  completeCommand
+  completeCommand,
+  checkForInterrupt
 } from '../utils/hook-utils';
 import { HookEvent, HookResponse } from '../types';
 
@@ -20,6 +21,22 @@ async function main() {
   }
 
   try {
+    // PRIORITY 1: Check for interrupt commands immediately
+    const interruptCommands = await checkForInterrupt(serverUrl, agentId, token);
+    if (interruptCommands.length > 0) {
+      const interruptCmd = interruptCommands[0];
+      await markCommandAsProcessing(serverUrl, interruptCmd.id, token);
+      await completeCommand(serverUrl, interruptCmd.id, 'completed', 'Interrupted execution', token);
+      
+      // Return interrupt response immediately
+      outputHookResponse({
+        approved: false,
+        reason: interruptCmd.payload.reason || 'Execution interrupted from dashboard',
+        feedback: 'Claude execution was interrupted by user request'
+      });
+      return;
+    }
+
     // Debug: Log that hook was called
     require('fs').appendFileSync('/tmp/claude-companion-debug.log', `[${new Date().toISOString()}] Pre-tool-use hook called with args: ${process.argv.slice(2).join(', ')}\n`);
     
@@ -148,6 +165,13 @@ function executeCommand(command: any): HookResponse {
         approved: true,
         reason: 'Context provided remotely',
         feedback: command.payload.instructions || command.payload.feedback,
+      };
+
+    case 'interrupt':
+      return {
+        approved: false, // false means don't execute the tool
+        reason: command.payload.reason || 'Execution interrupted',
+        feedback: 'Claude execution was interrupted by user request',
       };
       
     default:

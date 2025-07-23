@@ -30,7 +30,7 @@ export interface RemoteCommand {
   id: string;
   agentId: string;
   sessionId: string;
-  type: 'approve' | 'deny' | 'context' | 'continue' | 'stop';
+  type: 'approve' | 'deny' | 'context' | 'continue' | 'stop' | 'interrupt';
   payload: {
     reason?: string;
     feedback?: string;

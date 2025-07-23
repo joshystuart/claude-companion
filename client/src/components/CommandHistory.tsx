@@ -48,6 +48,7 @@ export const CommandHistory: React.FC = () => {
       context: '💬',
       continue: '▶️',
       stop: '⏹️',
+      interrupt: '🛑',
     };
     return icons[type] || '❓';
   };

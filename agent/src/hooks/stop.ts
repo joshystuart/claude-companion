@@ -7,7 +7,8 @@ import {
   generateSessionId,
   checkForPendingCommands,
   markCommandAsProcessing,
-  completeCommand
+  completeCommand,
+  checkForInterrupt
 } from '../utils/hook-utils';
 import { HookEvent, HookResponse } from '../types';
 
@@ -20,6 +21,22 @@ async function main() {
   }
 
   try {
+    // PRIORITY 1: Check for interrupt commands immediately
+    const interruptCommands = await checkForInterrupt(serverUrl, agentId, token);
+    if (interruptCommands.length > 0) {
+      const interruptCmd = interruptCommands[0];
+      await markCommandAsProcessing(serverUrl, interruptCmd.id, token);
+      await completeCommand(serverUrl, interruptCmd.id, 'completed', 'Interrupted at stop', token);
+      
+      // Return interrupt response immediately
+      outputHookResponse({
+        approved: true, // For stop hook, interrupt means stop immediately
+        reason: interruptCmd.payload.reason || 'Execution interrupted from dashboard',
+        feedback: 'Claude execution was interrupted by user request'
+      });
+      return;
+    }
+
     // Parse stop data from Claude Code
     const stopData = parseStdinData();
     
@@ -69,7 +86,7 @@ async function processSessionControl(
         // Process session control commands
         for (const command of pendingCommands) {
           if (command.sessionId === sessionId || !command.sessionId) {
-            if (command.type === 'continue' || command.type === 'stop') {
+            if (command.type === 'continue' || command.type === 'stop' || command.type === 'interrupt') {
               // Mark command as processing
               await markCommandAsProcessing(serverUrl, command.id, token);
               
@@ -115,6 +132,13 @@ function executeSessionCommand(command: any): HookResponse {
         approved: true, // true means stop the session
         reason: command.payload.reason || 'Stop session confirmed',
         feedback: command.payload.feedback,
+      };
+
+    case 'interrupt':
+      return {
+        approved: true, // true means stop immediately
+        reason: command.payload.reason || 'Session interrupted',
+        feedback: 'Claude execution was interrupted by user request',
       };
       
     default:

@@ -10,7 +10,7 @@ export class CommandsApi {
   async createCommand(command: {
     agentId: string;
     sessionId: string;
-    type: 'approve' | 'deny' | 'context' | 'continue' | 'stop';
+    type: 'approve' | 'deny' | 'context' | 'continue' | 'stop' | 'interrupt';
     payload?: {
       reason?: string;
       feedback?: string;
@@ -131,6 +131,26 @@ export class CommandsApi {
       type: 'stop',
       payload: { reason },
     });
+  }
+
+  async interruptSession(agentId: string, sessionId: string, reason?: string): Promise<RemoteCommand> {
+    return this.createCommand({
+      agentId,
+      sessionId,
+      type: 'interrupt',
+      payload: { reason: reason || 'Interrupted from dashboard' },
+    });
+  }
+
+  // High-priority interrupt endpoint for immediate response
+  async getInterruptCommands(agentId: string): Promise<RemoteCommand[]> {
+    const response = await fetch(`${this.baseUrl}/api/commands/${agentId}/interrupt`);
+
+    if (!response.ok) {
+      return [];
+    }
+
+    return response.json();
   }
 }
 

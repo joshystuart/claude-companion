@@ -44,6 +44,22 @@ export const SessionControl: React.FC<SessionControlProps> = ({ agent, onCommand
     }
   };
 
+  const handleInterrupt = async () => {
+    setIsSubmitting(true);
+    try {
+      await commandsApi.interruptSession(
+        agent.id,
+        agent.sessionId || '',
+        'Emergency interrupt from dashboard'
+      );
+      onCommandSent?.();
+    } catch (error) {
+      console.error('Failed to interrupt session:', error);
+    } finally {
+      setIsSubmitting(false);
+    }
+  };
+
   const handleInjectContext = async () => {
     if (!instructions) return;
     
@@ -85,6 +101,24 @@ export const SessionControl: React.FC<SessionControlProps> = ({ agent, onCommand
       </div>
 
       <div className="space-y-4">
+        {/* Emergency Interrupt Button - Prominent placement */}
+        <div className="border-2 border-red-200 rounded-lg p-3 bg-red-50">
+          <div className="flex items-center justify-between mb-2">
+            <span className="text-sm font-medium text-red-800">Emergency Control</span>
+            <span className="text-xs text-red-600">⚠️ Immediate action</span>
+          </div>
+          <button
+            onClick={handleInterrupt}
+            className="w-full px-4 py-3 bg-red-600 text-white rounded-lg hover:bg-red-700 transition-colors disabled:opacity-50 font-medium text-sm"
+            disabled={isSubmitting || agent.status !== 'active'}
+          >
+            🛑 INTERRUPT CLAUDE (ESC)
+          </button>
+          <p className="text-xs text-red-600 mt-1">
+            Immediately stops Claude's current execution, like pressing ESC in CLI
+          </p>
+        </div>
+
         <div>
           <label className="block text-sm font-medium text-gray-700 mb-2">
             Instructions / Context
@@ -130,6 +164,7 @@ export const SessionControl: React.FC<SessionControlProps> = ({ agent, onCommand
       <div className="mt-4 p-3 bg-gray-50 rounded text-xs text-gray-600">
         <p className="font-medium mb-1">How Session Control Works:</p>
         <ul className="list-disc list-inside space-y-1">
+          <li><strong>Interrupt</strong>: Immediately stops execution (like ESC in CLI)</li>
           <li><strong>Continue</strong>: Sends instructions when Claude tries to stop</li>
           <li><strong>Stop</strong>: Forces Claude to end the current session</li>
           <li><strong>Inject Context</strong>: Sends guidance on the next tool use</li>

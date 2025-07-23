@@ -4,7 +4,7 @@ import { CreateCommandDto } from './dto/create-command.dto';
 import { CompleteCommandDto } from './dto/complete-command.dto';
 import { RemoteCommand } from '../libs/types';
 
-@Controller('api/commands')
+@Controller('commands')
 export class CommandsController {
   private readonly logger = new Logger(CommandsController.name);
 
@@ -48,5 +48,13 @@ export class CommandsController {
   @Get('agent/:agentId')
   async getCommandsByAgent(@Param('agentId') agentId: string): Promise<RemoteCommand[]> {
     return this.commandsService.getCommandsByAgent(agentId);
+  }
+
+  @Get(':agentId/interrupt')
+  async getInterruptCommands(@Param('agentId') agentId: string): Promise<RemoteCommand[]> {
+    this.logger.debug(`Getting interrupt commands for agent ${agentId}`);
+    const commands = await this.commandsService.getPendingCommandsForAgent(agentId);
+    // Return only interrupt commands for immediate processing
+    return commands.filter(cmd => cmd.type === 'interrupt');
   }
 }

@@ -7,8 +7,8 @@ export class CreateCommandDto {
   @IsString()
   sessionId: string;
 
-  @IsEnum(['approve', 'deny', 'context', 'continue', 'stop'])
-  type: 'approve' | 'deny' | 'context' | 'continue' | 'stop';
+  @IsEnum(['approve', 'deny', 'context', 'continue', 'stop', 'interrupt'])
+  type: 'approve' | 'deny' | 'context' | 'continue' | 'stop' | 'interrupt';
 
   @IsOptional()
   @IsObject()
