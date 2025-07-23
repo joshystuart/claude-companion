@@ -6,8 +6,10 @@ import {
   BashEventCard,
   TodoEventCard,
   FileEventCard,
+  EditEventCard,
   WebEventCard,
   TaskEventCard,
+  NotificationEventCard,
   GenericEventCard
 } from './event-cards';
 
@@ -99,10 +101,14 @@ export const EventControl: React.FC<EventControlProps> = ({ event, onCommandSent
         return <TodoEventCard {...cardProps} />;
       case 'file':
         return <FileEventCard {...cardProps} />;
+      case 'edit':
+        return <EditEventCard {...cardProps} />;
       case 'web':
         return <WebEventCard {...cardProps} />;
       case 'task':
         return <TaskEventCard {...cardProps} />;
+      case 'notification':
+        return <NotificationEventCard {...cardProps} />;
       default:
         return <GenericEventCard {...cardProps} />;
     }

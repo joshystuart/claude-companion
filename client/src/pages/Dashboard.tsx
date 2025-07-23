@@ -13,7 +13,8 @@ import { useDashboardStore } from '@/store/dashboard-store';
 import { HookEvent } from '@/types';
 import { clsx } from 'clsx';
 import { EventControl } from '@/components/EventControl';
-import { SessionControl } from '@/components/SessionControl';
+import { AgentTabs } from '@/components/AgentTabs';
+import { HeaderSessionControl } from '@/components/HeaderSessionControl';
 import { CommandHistory } from '@/components/CommandHistory';
 
 export function Dashboard() {
@@ -28,7 +29,6 @@ export function Dashboard() {
   } = useDashboardStore();
 
   const [showCommandHistory, setShowCommandHistory] = useState(false);
-  const [selectedAgent, setSelectedAgentState] = useState<string | null>(null);
 
   const events = getFilteredEvents();
   const agentList = Array.from(agents.values());
@@ -155,134 +155,91 @@ export function Dashboard() {
         </div>
       )}
 
-      <div className="grid grid-cols-1 lg:grid-cols-4 gap-6">
-        {/* Agents List */}
-        <div className="lg:col-span-1">
-          <div className="card">
-            <div className="p-6 border-b border-gray-200">
-              <h3 className="text-lg font-medium text-gray-900">Agents</h3>
-            </div>
-            <div className="divide-y divide-gray-200">
-              {agentList.length === 0 ? (
-                <div className="p-6 text-center text-gray-500">
-                  <Computer className="mx-auto h-12 w-12 text-gray-300" />
-                  <p className="mt-2">No agents connected</p>
-                  <p className="text-sm text-gray-400 mt-1">
-                    Install the agent to start monitoring
-                  </p>
-                </div>
-              ) : (
-                agentList.map((agent) => (
-                  <div
-                    key={agent.id}
-                    className={clsx(
-                      'p-4 hover:bg-gray-50 cursor-pointer transition-colors',
-                      selectedAgentId === agent.id && 'bg-primary-50'
-                    )}
-                    onClick={() => {
-                      setSelectedAgent(
-                        selectedAgentId === agent.id ? null : agent.id
-                      );
-                      setSelectedAgentState(
-                        selectedAgent === agent.id ? null : agent.id
-                      );
-                    }}
-                  >
-                    <div className="flex items-center justify-between">
-                      <div className="flex items-center space-x-3">
-                        <Circle className={clsx('h-3 w-3', getStatusColor(agent.status))} />
-                        <div>
-                          <p className="text-sm font-medium text-gray-900">
-                            {agent.id}
-                          </p>
-                          <p className="text-xs text-gray-500">
-                            {agent.sessionId ? `Session: ${agent.sessionId.slice(0, 8)}...` : 'No session'}
-                          </p>
-                        </div>
-                      </div>
-                      <div className="text-right">
-                        <span className={clsx('status-indicator', {
-                          'status-active': agent.status === 'active',
-                          'status-idle': agent.status === 'idle',
-                          'status-offline': agent.status === 'offline',
-                        })}>
-                          {agent.status}
-                        </span>
-                        <p className="text-xs text-gray-500 mt-1">
-                          {formatDistanceToNow(agent.lastSeen, { addSuffix: true })}
-                        </p>
-                      </div>
-                    </div>
-                  </div>
-                ))
-              )}
-            </div>
-          </div>
+      {/* Agent Tabs */}
+      {agentList.length > 0 && (
+        <AgentTabs
+          agents={agentList}
+          selectedAgentId={selectedAgentId}
+          onAgentSelect={setSelectedAgent}
+        />
+      )}
+
+      {/* Header with Session Controls */}
+      <div className="flex items-center justify-between mb-6">
+        <div className="flex items-center space-x-4">
+          <h2 className="text-xl font-semibold text-gray-900">
+            {selectedAgentId ? `Agent: ${agentList.find(a => a.id === selectedAgentId)?.id}` : 'All Agents'}
+          </h2>
           
-          {/* Session Control for Selected Agent */}
-          {selectedAgent && agentList.find(a => a.id === selectedAgent) && (
-            <div className="mt-6">
-              <SessionControl 
-                agent={agentList.find(a => a.id === selectedAgent)!}
-                onCommandSent={() => {
-                  // Optionally refresh or show notification
-                }}
-              />
-            </div>
-          )}
+          {/* Event filter */}
+          <div className="flex items-center space-x-2">
+            <Filter className="h-4 w-4 text-gray-400" />
+            <select
+              value={eventFilter}
+              onChange={(e) => setEventFilter(e.target.value as any)}
+              className="text-sm border-gray-300 rounded-md focus:ring-primary-500 focus:border-primary-500"
+            >
+              <option value="all">All Events</option>
+              <option value="pre_tool_use">Pre Tool Use</option>
+              <option value="post_tool_use">Post Tool Use</option>
+              <option value="stop">Stop</option>
+              <option value="notification">Notification</option>
+            </select>
+          </div>
         </div>
 
-        {/* Events Feed */}
-        <div className="lg:col-span-3">
-          <div className="card">
-            <div className="p-6 border-b border-gray-200">
-              <div className="flex items-center justify-between">
-                <h3 className="text-lg font-medium text-gray-900">Recent Events</h3>
-                
-                {/* Event filter */}
-                <div className="flex items-center space-x-2">
-                  <Filter className="h-4 w-4 text-gray-400" />
-                  <select
-                    value={eventFilter}
-                    onChange={(e) => setEventFilter(e.target.value as any)}
-                    className="text-sm border-gray-300 rounded-md focus:ring-primary-500 focus:border-primary-500"
-                  >
-                    <option value="all">All Events</option>
-                    <option value="pre_tool_use">Pre Tool Use</option>
-                    <option value="post_tool_use">Post Tool Use</option>
-                    <option value="stop">Stop</option>
-                    <option value="notification">Notification</option>
-                  </select>
-                </div>
+        {/* Session Controls for Selected Agent */}
+        <HeaderSessionControl
+          agent={selectedAgentId ? agentList.find(a => a.id === selectedAgentId) || null : null}
+          onCommandSent={() => {
+            // Optionally refresh or show notification
+          }}
+        />
+      </div>
+
+      {/* No Agents State */}
+      {agentList.length === 0 && (
+        <div className="text-center py-12">
+          <Computer className="mx-auto h-16 w-16 text-gray-300" />
+          <h3 className="mt-4 text-lg font-medium text-gray-900">No agents connected</h3>
+          <p className="mt-2 text-sm text-gray-500">
+            Install the agent to start monitoring Claude Code sessions
+          </p>
+        </div>
+      )}
+
+      {/* Events Feed */}
+      {agentList.length > 0 && (
+        <div className="card">
+          <div className="p-6 border-b border-gray-200">
+            <h3 className="text-lg font-medium text-gray-900">Recent Events</h3>
+          </div>
+          
+          <div className="max-h-96 overflow-y-auto">
+            {events.length === 0 ? (
+              <div className="p-6 text-center text-gray-500">
+                <Terminal className="mx-auto h-12 w-12 text-gray-300" />
+                <p className="mt-2">No events yet</p>
+                <p className="text-sm text-gray-400 mt-1">
+                  Events will appear here when agents are active
+                </p>
               </div>
-            </div>
-            
-            <div className="max-h-96 overflow-y-auto">
-              {events.length === 0 ? (
-                <div className="p-6 text-center text-gray-500">
-                  <Terminal className="mx-auto h-12 w-12 text-gray-300" />
-                  <p className="mt-2">No events yet</p>
-                  <p className="text-sm text-gray-400 mt-1">
-                    Events will appear here when agents are active
-                  </p>
-                </div>
-              ) : (
-                <div className="space-y-2 p-4">
-                  {events.map((event) => (
-                    <EventControl
-                      key={`${event.agentId}-${event.timestamp}`}
-                      event={event}
-                      onCommandSent={() => {
-                        // Optionally refresh or show notification
-                      }}
-                    />
-                  ))}
-                </div>
-              )}
-            </div>
+            ) : (
+              <div className="space-y-2 p-4">
+                {events.map((event) => (
+                  <EventControl
+                    key={`${event.agentId}-${event.timestamp}`}
+                    event={event}
+                    onCommandSent={() => {
+                      // Optionally refresh or show notification
+                    }}
+                  />
+                ))}
+              </div>
+            )}
           </div>
         </div>
-      </div>
+      )}
     </div>
   );
 }

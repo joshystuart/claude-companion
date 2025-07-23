@@ -40,4 +40,14 @@
   .status-offline {
     @apply status-indicator bg-gray-100 text-gray-800;
   }
+
+  /* Custom scrollbar hiding for horizontal scrolling */
+  .scrollbar-hide {
+    -ms-overflow-style: none;  /* Internet Explorer 10+ */
+    scrollbar-width: none;  /* Firefox */
+  }
+  
+  .scrollbar-hide::-webkit-scrollbar { 
+    display: none;  /* Safari and Chrome */
+  }
 }

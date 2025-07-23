@@ -1,7 +1,7 @@
 import { HookEvent } from '@/types';
 
 export interface EventTypeInfo {
-  type: 'bash' | 'todo' | 'file' | 'web' | 'task' | 'generic';
+  type: 'bash' | 'todo' | 'file' | 'edit' | 'web' | 'task' | 'notification' | 'generic';
   title: string;
   body: string;
   icon: string;
@@ -58,8 +58,21 @@ export function analyzeEvent(event: HookEvent): EventTypeInfo {
     };
   }
 
-  // File operations
-  if (['read', 'edit', 'multiedit', 'write', 'glob', 'grep'].includes(toolName || '')) {
+  // Edit operations (show before/after changes)
+  if (['edit', 'multiedit', 'write'].includes(toolName || '')) {
+    const filePath = event.data.toolArgs?.file_path || 'Unknown file';
+    
+    return {
+      type: 'edit',
+      title: `${capitalizeFirst(toolName || 'File')} Operation`,
+      body: filePath,
+      icon: '✏️',
+      isActive
+    };
+  }
+
+  // Other file operations
+  if (['read', 'glob', 'grep'].includes(toolName || '')) {
     const filePath = event.data.toolArgs?.file_path || 
                     event.data.toolArgs?.notebook_path || 
                     event.data.toolArgs?.pattern ||
@@ -98,6 +111,17 @@ export function analyzeEvent(event: HookEvent): EventTypeInfo {
       title: description,
       body: truncateText(prompt, 150),
       icon: '🤖',
+      isActive
+    };
+  }
+
+  // Notification events (including approval-required events)
+  if (event.hookType === 'notification' || event.data.requiresApproval) {
+    return {
+      type: 'notification',
+      title: event.data.requiresApproval ? 'Approval Required' : 'Notification',
+      body: event.data.message || event.data.suggestedAction || 'Notification from Claude',
+      icon: '💬',
       isActive
     };
   }
