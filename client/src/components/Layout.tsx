@@ -61,13 +61,42 @@ export function Layout({ children }: LayoutProps) {
               </div>
             </div>
 
-            {/* Connection status and stats */}
-            <div className="flex items-center space-x-6">
+            {/* Navigation, stats, and connection status */}
+            <div className="flex items-center space-x-8">
+              {/* Navigation tabs */}
+              <nav className="flex space-x-1">
+                {navigation.map((item) => {
+                  const isActive = location.pathname === item.href;
+                  return (
+                    <Link
+                      key={item.name}
+                      to={item.href}
+                      className={clsx(
+                        'flex items-center px-4 py-2 text-sm font-medium rounded-lg transition-colors',
+                        isActive
+                          ? 'bg-primary-100 text-primary-700'
+                          : 'text-gray-600 hover:bg-gray-100 hover:text-gray-900'
+                      )}
+                    >
+                      <item.icon
+                        className={clsx(
+                          'mr-2 h-4 w-4',
+                          isActive ? 'text-primary-600' : 'text-gray-500'
+                        )}
+                      />
+                      {item.name}
+                    </Link>
+                  );
+                })}
+              </nav>
+
+              {/* Active agents count */}
               <div className="flex items-center space-x-2 text-sm text-gray-600">
                 <span className="font-medium">{activeAgents.length}</span>
                 <span>active agents</span>
               </div>
               
+              {/* Connection status */}
               <button
                 onClick={reconnect}
                 className="flex items-center space-x-2 text-sm text-gray-600 hover:text-gray-900 transition-colors"
@@ -81,43 +110,11 @@ export function Layout({ children }: LayoutProps) {
         </div>
       </header>
 
+      {/* Main content - full width */}
       <div className="mx-auto max-w-7xl px-4 sm:px-6 lg:px-8 py-8">
-        <div className="flex gap-8">
-          {/* Sidebar navigation */}
-          <nav className="flex-shrink-0 w-64">
-            <ul className="space-y-1">
-              {navigation.map((item) => {
-                const isActive = location.pathname === item.href;
-                return (
-                  <li key={item.name}>
-                    <Link
-                      to={item.href}
-                      className={clsx(
-                        'group flex items-center px-3 py-2 text-sm font-medium rounded-md transition-colors',
-                        isActive
-                          ? 'bg-primary-50 text-primary-700 border-r-2 border-primary-600'
-                          : 'text-gray-700 hover:bg-gray-100 hover:text-gray-900'
-                      )}
-                    >
-                      <item.icon
-                        className={clsx(
-                          'mr-3 h-5 w-5',
-                          isActive ? 'text-primary-500' : 'text-gray-400 group-hover:text-gray-500'
-                        )}
-                      />
-                      {item.name}
-                    </Link>
-                  </li>
-                );
-              })}
-            </ul>
-          </nav>
-
-          {/* Main content */}
-          <main className="flex-1 min-w-0">
-            {children}
-          </main>
-        </div>
+        <main className="w-full">
+          {children}
+        </main>
       </div>
     </div>
   );

@@ -27,6 +27,8 @@ interface DashboardState {
   getActiveAgents: () => Agent[];
   getFilteredEvents: () => HookEvent[];
   getAgentEvents: (agentId: string) => HookEvent[];
+  getActiveEvents: () => HookEvent[];
+  getEventsByType: (toolName: string) => HookEvent[];
 }
 
 export const useDashboardStore = create<DashboardState>((set, get) => ({
@@ -114,5 +116,20 @@ export const useDashboardStore = create<DashboardState>((set, get) => ({
   getAgentEvents: (agentId) => {
     const { events } = get();
     return events.filter(event => event.agentId === agentId);
+  },
+
+  getActiveEvents: () => {
+    const { events } = get();
+    const fiveMinutesAgo = new Date(Date.now() - 5 * 60 * 1000);
+    return events.filter(event => {
+      const eventTime = new Date(event.timestamp);
+      return (event.hookType === 'pre_tool_use' && event.data.requiresApproval) ||
+             (event.hookType === 'pre_tool_use' && eventTime > fiveMinutesAgo);
+    });
+  },
+
+  getEventsByType: (toolName) => {
+    const { events } = get();
+    return events.filter(event => event.data.toolName?.toLowerCase() === toolName.toLowerCase());
   },
 }));
