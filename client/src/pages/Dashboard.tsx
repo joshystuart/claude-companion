@@ -227,75 +227,82 @@ export function Dashboard() {
             ) : (
               <div className="space-y-2 p-3">
                 {(() => {
-                  // DEBUG: Log all raw events 
-                  console.log('=== CLIENT DEBUG: ALL EVENTS ===');
-                  events.slice(0, 5).forEach((event, i) => {
-                    console.log(`Event ${i} (${event.hookType}):`, {
-                      toolName: event.data.toolName,
-                      requiresApproval: event.data.requiresApproval,
-                      message: event.data.message,
-                      rawInputMessage: event.data.rawInput?.message,
-                      timestamp: event.timestamp,
-                      fullData: event.data
-                    });
-                  });
-                  console.log('==================================');
                   
-                  // Filter out redundant notification events that have corresponding pre_tool_use events
+                  // Filter out redundant events
                   const filteredEvents = events.filter((event, index) => {
-                    // Keep all non-notification events
-                    if (event.hookType !== 'notification') {
-                      return true;
+                    // Filter out stop events that are part of session end notifications
+                    if (event.hookType === 'stop') {
+                      const stopTime = new Date(event.timestamp).getTime();
+                      
+                      // Look for a notification event from the same agent within 2 seconds before the stop
+                      const hasCorrespondingNotification = events.some(otherEvent => {
+                        if (otherEvent.hookType !== 'notification') return false;
+                        if (otherEvent.agentId !== event.agentId) return false;
+                        
+                        const notificationTime = new Date(otherEvent.timestamp).getTime();
+                        const timeDiff = stopTime - notificationTime;
+                        
+                        // Notification should come before stop within 2 seconds
+                        return timeDiff > 0 && timeDiff <= 2000;
+                      });
+                      
+                      // Hide the stop event if it's part of a session end notification
+                      return !hasCorrespondingNotification;
                     }
                     
                     // For notification events, check if there's a corresponding pre_tool_use event
-                    const notificationMessage = event.data.rawInput?.message || event.data.message || '';
-                    
-                    // Check if this is a tool permission notification (e.g., "Claude needs your permission to use Bash")
-                    const isToolPermissionNotification = notificationMessage.includes('needs your permission to use');
-                    
-                    if (!isToolPermissionNotification) {
-                      return true; // Keep non-tool-permission notifications
+                    if (event.hookType === 'notification') {
+                      const notificationMessage = event.data.rawInput?.message || event.data.message || '';
+                      
+                      // Check if this is a tool permission notification (e.g., "Claude needs your permission to use Bash")
+                      const isToolPermissionNotification = notificationMessage.includes('needs your permission to use');
+                      
+                      if (!isToolPermissionNotification) {
+                        return true; // Keep non-tool-permission notifications (including session end notifications)
+                      }
+                      
+                      // Extract the tool name from the notification message
+                      const toolNameMatch = notificationMessage.match(/permission to use (\w+)/i);
+                      const notificationToolName = toolNameMatch?.[1]?.toLowerCase();
+                      
+                      if (!notificationToolName) {
+                        return true; // Keep if we can't extract tool name
+                      }
+                      
+                      // Look for a pre_tool_use event with the same tool name in the same time window (within 5 seconds)
+                      const notificationTime = new Date(event.timestamp).getTime();
+                      const hasCorrespondingPreToolUse = events.some(otherEvent => {
+                        if (otherEvent.hookType !== 'pre_tool_use') return false;
+                        if (otherEvent.agentId !== event.agentId) return false;
+                        
+                        const otherToolName = otherEvent.data.toolName?.toLowerCase();
+                        const otherTime = new Date(otherEvent.timestamp).getTime();
+                        const timeDiff = Math.abs(otherTime - notificationTime);
+                        
+                        // Map notification tool names to actual tool names
+                        const toolNameMappings: Record<string, string[]> = {
+                          'update': ['edit', 'multiedit', 'write'],
+                          'bash': ['bash'], 
+                          'read': ['read'],
+                          'task': ['task'],
+                          'websearch': ['websearch'],
+                          'webfetch': ['webfetch']
+                        };
+                        
+                        // Check if notification tool name maps to the actual tool name
+                        const mappedToolNames = toolNameMappings[notificationToolName] || [notificationToolName];
+                        const toolNamesMatch = mappedToolNames.includes(otherToolName);
+                        
+                        // Match tool name and within 5 seconds
+                        return toolNamesMatch && timeDiff <= 5000;
+                      });
+                      
+                      // Hide the notification if there's a corresponding pre_tool_use event
+                      return !hasCorrespondingPreToolUse;
                     }
                     
-                    // Extract the tool name from the notification message
-                    const toolNameMatch = notificationMessage.match(/permission to use (\w+)/i);
-                    const notificationToolName = toolNameMatch?.[1]?.toLowerCase();
-                    
-                    if (!notificationToolName) {
-                      return true; // Keep if we can't extract tool name
-                    }
-                    
-                    // Look for a pre_tool_use event with the same tool name in the same time window (within 5 seconds)
-                    const notificationTime = new Date(event.timestamp).getTime();
-                    const hasCorrespondingPreToolUse = events.some(otherEvent => {
-                      if (otherEvent.hookType !== 'pre_tool_use') return false;
-                      if (otherEvent.agentId !== event.agentId) return false;
-                      
-                      const otherToolName = otherEvent.data.toolName?.toLowerCase();
-                      const otherTime = new Date(otherEvent.timestamp).getTime();
-                      const timeDiff = Math.abs(otherTime - notificationTime);
-                      
-                      // Map notification tool names to actual tool names
-                      const toolNameMappings: Record<string, string[]> = {
-                        'update': ['edit', 'multiedit', 'write'],
-                        'bash': ['bash'], 
-                        'read': ['read'],
-                        'task': ['task'],
-                        'websearch': ['websearch'],
-                        'webfetch': ['webfetch']
-                      };
-                      
-                      // Check if notification tool name maps to the actual tool name
-                      const mappedToolNames = toolNameMappings[notificationToolName] || [notificationToolName];
-                      const toolNamesMatch = mappedToolNames.includes(otherToolName);
-                      
-                      // Match tool name and within 5 seconds
-                      return toolNamesMatch && timeDiff <= 5000;
-                    });
-                    
-                    // Hide the notification if there's a corresponding pre_tool_use event
-                    return !hasCorrespondingPreToolUse;
+                    // Keep all other events
+                    return true;
                   });
                   
                   return filteredEvents.map((event, index) => (

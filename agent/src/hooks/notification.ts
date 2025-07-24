@@ -8,7 +8,7 @@ import { Logger } from '../utils/logger';
 async function main() {
   const [serverUrl, agentId, token] = process.argv.slice(2);
 
-  Logger.notification.info('Hook started', { serverUrl, agentId: agentId, hasToken: !!token });
+  Logger.notification.info('Notification hook started', { serverUrl, agentId: agentId, hasToken: !!token });
 
   if (!serverUrl || !agentId) {
     Logger.notification.error('Missing required arguments', { serverUrl, agentId });
@@ -59,7 +59,8 @@ async function main() {
     Logger.notification.info('Sending event to server', { 
       hookType: event.hookType, 
       message: event.data.message,
-      agentId: event.agentId 
+      agentId: event.agentId,
+      event
     });
     
     // Send event to server
@@ -67,7 +68,7 @@ async function main() {
     Logger.notification.debug('Event sent successfully');
     
     const finalResponse = { approved: true };
-    Logger.notification.info('Returning acknowledgment', finalResponse);
+    Logger.notification.info('Returning acknowledgment');
     
     // Notification hooks typically just acknowledge
     outputHookResponse(finalResponse);

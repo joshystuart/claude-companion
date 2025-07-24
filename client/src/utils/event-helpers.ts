@@ -1,7 +1,7 @@
 import { HookEvent } from '@/types';
 
 export interface EventTypeInfo {
-  type: 'bash' | 'todo' | 'file' | 'edit' | 'web' | 'task' | 'notification' | 'generic';
+  type: 'bash' | 'todo' | 'file' | 'edit' | 'web' | 'task' | 'notification' | 'session_end' | 'generic';
   title: string;
   body: string;
   icon: string;
@@ -82,6 +82,41 @@ function shouldInheritApprovalRequirement(event: HookEvent, allEvents: HookEvent
   });
   
   return hasCorrespondingNotification;
+}
+
+/**
+ * Check if a notification is a session end notification (waiting for input)
+ * This happens when a notification is followed by a stop hook
+ */
+function isSessionEndNotification(event: HookEvent, allEvents: HookEvent[]): boolean {
+  if (event.hookType !== 'notification') return false;
+  
+  const notificationTime = new Date(event.timestamp).getTime();
+  
+  // Look for a stop event from the same agent within 2 seconds after the notification
+  const hasFollowingStopEvent = allEvents.some(otherEvent => {
+    if (otherEvent.hookType !== 'stop') return false;
+    if (otherEvent.agentId !== event.agentId) return false;
+    
+    const stopTime = new Date(otherEvent.timestamp).getTime();
+    const timeDiff = stopTime - notificationTime;
+    
+    // Stop event should come after notification within 2 seconds
+    return timeDiff > 0 && timeDiff <= 2000;
+  });
+  
+  return hasFollowingStopEvent;
+}
+
+/**
+ * Check if a notification is a permission request
+ * This happens when the message contains "needs permission"
+ */
+function isPermissionNotification(event: HookEvent): boolean {
+  if (event.hookType !== 'notification') return false;
+  
+  const message = event.data.rawInput?.message || event.data.message || '';
+  return message.includes('needs permission') || message.includes('needs your permission');
 }
 
 /**
@@ -182,7 +217,29 @@ export function analyzeEvent(event: HookEvent, allEvents: HookEvent[] = []): Eve
     };
   }
 
-  // Notification events (including approval-required events)
+  // Session end notifications (waiting for input)
+  if (event.hookType === 'notification' && isSessionEndNotification(event, allEvents)) {
+    return {
+      type: 'session_end',
+      title: 'Claude is waiting for input',
+      body: event.data.message || 'Claude is waiting for your next prompt',
+      icon: '⏸️',
+      isActive: true // Session end notifications are always active
+    };
+  }
+
+  // Permission notifications (requiring approval)
+  if (event.hookType === 'notification' && isPermissionNotification(event)) {
+    return {
+      type: 'notification',
+      title: 'Approval Required',
+      body: event.data.message || event.data.suggestedAction || 'Claude needs permission to proceed',
+      icon: '🔐',
+      isActive
+    };
+  }
+
+  // Other notification events (including approval-required events)
   if (event.hookType === 'notification' || event.data.requiresApproval) {
     return {
       type: 'notification',

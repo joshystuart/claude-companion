@@ -11,6 +11,7 @@ import {
   WebEventCard,
   TaskEventCard,
   NotificationEventCard,
+  InputPromptCard,
   GenericEventCard
 } from './event-cards';
 
@@ -113,6 +114,8 @@ export const EventControl: React.FC<EventControlProps> = ({ event, isLatest = fa
         return <TaskEventCard {...cardProps} />;
       case 'notification':
         return <NotificationEventCard {...cardProps} />;
+      case 'session_end':
+        return <InputPromptCard event={event} isActive={active} isLatest={isLatest} />;
       default:
         return <GenericEventCard {...cardProps} />;
     }
