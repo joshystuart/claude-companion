@@ -226,16 +226,61 @@ export function Dashboard() {
               </div>
             ) : (
               <div className="space-y-2 p-3">
-                {events.map((event, index) => (
-                  <EventControl
-                    key={`${event.agentId}-${event.timestamp}`}
-                    event={event}
-                    isLatest={index === 0}
-                    onCommandSent={() => {
-                      // Optionally refresh or show notification
-                    }}
-                  />
-                ))}
+                {(() => {
+                  // Filter out redundant notification events that have corresponding pre_tool_use events
+                  const filteredEvents = events.filter((event, index) => {
+                    // Keep all non-notification events
+                    if (event.hookType !== 'notification') {
+                      return true;
+                    }
+                    
+                    // For notification events, check if there's a corresponding pre_tool_use event
+                    const notificationMessage = event.data.rawInput?.message || event.data.message || '';
+                    
+                    // Check if this is a tool permission notification (e.g., "Claude needs your permission to use Bash")
+                    const isToolPermissionNotification = notificationMessage.includes('needs your permission to use');
+                    
+                    if (!isToolPermissionNotification) {
+                      return true; // Keep non-tool-permission notifications
+                    }
+                    
+                    // Extract the tool name from the notification message
+                    const toolNameMatch = notificationMessage.match(/permission to use (\w+)/i);
+                    const notificationToolName = toolNameMatch?.[1]?.toLowerCase();
+                    
+                    if (!notificationToolName) {
+                      return true; // Keep if we can't extract tool name
+                    }
+                    
+                    // Look for a pre_tool_use event with the same tool name in the same time window (within 5 seconds)
+                    const notificationTime = new Date(event.timestamp).getTime();
+                    const hasCorrespondingPreToolUse = events.some(otherEvent => {
+                      if (otherEvent.hookType !== 'pre_tool_use') return false;
+                      if (otherEvent.agentId !== event.agentId) return false;
+                      
+                      const otherToolName = otherEvent.data.toolName?.toLowerCase();
+                      const otherTime = new Date(otherEvent.timestamp).getTime();
+                      const timeDiff = Math.abs(otherTime - notificationTime);
+                      
+                      // Match tool name and within 5 seconds
+                      return otherToolName === notificationToolName && timeDiff <= 5000;
+                    });
+                    
+                    // Hide the notification if there's a corresponding pre_tool_use event
+                    return !hasCorrespondingPreToolUse;
+                  });
+                  
+                  return filteredEvents.map((event, index) => (
+                    <EventControl
+                      key={`${event.agentId}-${event.timestamp}`}
+                      event={event}
+                      isLatest={index === 0}
+                      onCommandSent={() => {
+                        // Optionally refresh or show notification
+                      }}
+                    />
+                  ));
+                })()}
               </div>
             )}
           </div>

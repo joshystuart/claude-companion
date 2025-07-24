@@ -35,11 +35,56 @@ export function isEventActive(event: HookEvent, allEvents: HookEvent[] = []): bo
 }
 
 /**
+ * Check if a pre_tool_use event should inherit approval requirement from a corresponding notification
+ */
+function shouldInheritApprovalRequirement(event: HookEvent, allEvents: HookEvent[]): boolean {
+  if (event.hookType !== 'pre_tool_use') return false;
+  if (event.data.requiresApproval) return false; // Already requires approval
+  
+  const toolName = event.data.toolName?.toLowerCase();
+  if (!toolName) return false;
+  
+  // Look for a corresponding notification event
+  const eventTime = new Date(event.timestamp).getTime();
+  
+  const hasCorrespondingNotification = allEvents.some(otherEvent => {
+    if (otherEvent.hookType !== 'notification') return false;
+    if (otherEvent.agentId !== event.agentId) return false;
+    
+    const notificationMessage = otherEvent.data.rawInput?.message || otherEvent.data.message || '';
+    const isToolPermissionNotification = notificationMessage.includes('needs your permission to use');
+    
+    if (!isToolPermissionNotification) return false;
+    
+    // Extract tool name from notification
+    const toolNameMatch = notificationMessage.match(/permission to use (\w+)/i);
+    const notificationToolName = toolNameMatch?.[1]?.toLowerCase();
+    
+    if (notificationToolName !== toolName) return false;
+    
+    // Check if within 5 seconds
+    const otherTime = new Date(otherEvent.timestamp).getTime();
+    const timeDiff = Math.abs(otherTime - eventTime);
+    
+    return timeDiff <= 5000;
+  });
+  
+  return hasCorrespondingNotification;
+}
+
+/**
  * Analyzes an event and returns structured information for display
  */
 export function analyzeEvent(event: HookEvent, allEvents: HookEvent[] = []): EventTypeInfo {
   const toolName = event.data.toolName?.toLowerCase();
   const isActive = isEventActive(event, allEvents);
+  
+  // Check if this pre_tool_use event should inherit approval requirement
+  const inheritApproval = shouldInheritApprovalRequirement(event, allEvents);
+  if (inheritApproval) {
+    // Temporarily modify the event data to include approval requirement
+    event.data.requiresApproval = true;
+  }
 
   // Bash commands
   if (toolName === 'bash') {
