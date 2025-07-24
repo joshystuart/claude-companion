@@ -227,6 +227,20 @@ export function Dashboard() {
             ) : (
               <div className="space-y-2 p-3">
                 {(() => {
+                  // DEBUG: Log all raw events 
+                  console.log('=== CLIENT DEBUG: ALL EVENTS ===');
+                  events.slice(0, 5).forEach((event, i) => {
+                    console.log(`Event ${i} (${event.hookType}):`, {
+                      toolName: event.data.toolName,
+                      requiresApproval: event.data.requiresApproval,
+                      message: event.data.message,
+                      rawInputMessage: event.data.rawInput?.message,
+                      timestamp: event.timestamp,
+                      fullData: event.data
+                    });
+                  });
+                  console.log('==================================');
+                  
                   // Filter out redundant notification events that have corresponding pre_tool_use events
                   const filteredEvents = events.filter((event, index) => {
                     // Keep all non-notification events
@@ -262,8 +276,22 @@ export function Dashboard() {
                       const otherTime = new Date(otherEvent.timestamp).getTime();
                       const timeDiff = Math.abs(otherTime - notificationTime);
                       
+                      // Map notification tool names to actual tool names
+                      const toolNameMappings: Record<string, string[]> = {
+                        'update': ['edit', 'multiedit', 'write'],
+                        'bash': ['bash'], 
+                        'read': ['read'],
+                        'task': ['task'],
+                        'websearch': ['websearch'],
+                        'webfetch': ['webfetch']
+                      };
+                      
+                      // Check if notification tool name maps to the actual tool name
+                      const mappedToolNames = toolNameMappings[notificationToolName] || [notificationToolName];
+                      const toolNamesMatch = mappedToolNames.includes(otherToolName);
+                      
                       // Match tool name and within 5 seconds
-                      return otherToolName === notificationToolName && timeDiff <= 5000;
+                      return toolNamesMatch && timeDiff <= 5000;
                     });
                     
                     // Hide the notification if there's a corresponding pre_tool_use event

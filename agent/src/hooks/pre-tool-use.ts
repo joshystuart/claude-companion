@@ -43,6 +43,14 @@ async function main() {
     
     // Parse tool data from Claude Code
     const toolData = parseStdinData();
+    
+    // DEBUG: Log raw pre-tool-use data
+    console.error('=== PRE-TOOL-USE HOOK DEBUG ===');
+    console.error('Raw tool data:', JSON.stringify(toolData, null, 2));
+    console.error('Tool name:', toolData.tool_name);
+    console.error('Tool input:', JSON.stringify(toolData.tool_input, null, 2));
+    console.error('==============================');
+    
     require('fs').appendFileSync('/tmp/claude-companion-debug.log', `[${new Date().toISOString()}] Parsed tool data: ${JSON.stringify(toolData)}\n`);
     
     // Get enhanced agent context

@@ -16,6 +16,12 @@ async function main() {
     // Parse notification data from Claude Code
     const notificationData = parseStdinData();
     
+    // DEBUG: Log raw notification data
+    console.log('=== NOTIFICATION HOOK DEBUG ===');
+    console.log('Raw notification data:', JSON.stringify(notificationData, null, 2));
+    console.log('Message:', notificationData.message);
+    console.log('===============================');
+    
     // Get enhanced agent context
     const context = getAgentContext();
     

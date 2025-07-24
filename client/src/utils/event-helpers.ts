@@ -60,7 +60,19 @@ function shouldInheritApprovalRequirement(event: HookEvent, allEvents: HookEvent
     const toolNameMatch = notificationMessage.match(/permission to use (\w+)/i);
     const notificationToolName = toolNameMatch?.[1]?.toLowerCase();
     
-    if (notificationToolName !== toolName) return false;
+    // Map notification tool names to actual tool names
+    const toolNameMappings: Record<string, string[]> = {
+      'update': ['edit', 'multiedit', 'write'],
+      'bash': ['bash'], 
+      'read': ['read'],
+      'task': ['task'],
+      'websearch': ['websearch'],
+      'webfetch': ['webfetch']
+    };
+    
+    // Check if notification tool name maps to the actual tool name
+    const mappedToolNames = toolNameMappings[notificationToolName] || [notificationToolName];
+    if (!mappedToolNames.includes(toolName)) return false;
     
     // Check if within 5 seconds
     const otherTime = new Date(otherEvent.timestamp).getTime();
