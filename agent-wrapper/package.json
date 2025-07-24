@@ -1,0 +1,13 @@
+{
+  "name": "claude-agent-wrapper",
+  "version": "1.0.0",
+  "description": "A simple wrapper for the Claude CLI that captures and logs all interactions",
+  "main": "index.js",
+  "scripts": {
+    "start": "node index.js"
+  },
+  "dependencies": {},
+  "keywords": ["claude", "cli", "wrapper", "logging"],
+  "author": "",
+  "license": "MIT"
+}
