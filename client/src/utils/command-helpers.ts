@@ -12,6 +12,10 @@ export function getCommandDetails(event: HookEvent): string {
   
   // For notification events or events without toolName, show the message content
   if (!toolName || event.hookType === 'notification' || event.hookType === 'stop') {
+    // Prioritize rawInput.message for notifications (contains actual Claude Code message)
+    if (event.hookType === 'notification' && event.data.rawInput?.message) {
+      return event.data.rawInput.message;
+    }
     if (message) {
       return message;
     }
@@ -24,6 +28,7 @@ export function getCommandDetails(event: HookEvent): string {
       return command ? `run: \`${command}\`` : 'run unknown command';
     
     case 'edit':
+    case 'update':
       const editFile = toolArgs?.file_path;
       return editFile ? `edit: ${editFile}` : 'edit unknown file';
     
@@ -97,7 +102,8 @@ export function getCommandDescription(event: HookEvent): string {
       return 'Claude session has stopped';
     }
     if (event.hookType === 'notification') {
-      return message || 'Claude has sent a notification';
+      // Prioritize rawInput.message for notifications (contains actual Claude Code message)
+      return event.data.rawInput?.message || message || 'Claude has sent a notification';
     }
     return 'Claude wants to perform an action';
   }
@@ -108,6 +114,7 @@ export function getCommandDescription(event: HookEvent): string {
     
     case 'edit':
     case 'multiedit':
+    case 'update':
       return 'Claude wants to modify a file';
     
     case 'write':
@@ -193,6 +200,113 @@ export function getCommandRiskLevel(event: HookEvent): 'low' | 'medium' | 'high'
     default:
       return 'low';
   }
+}
+
+/**
+ * Generate detailed approval prompt similar to Claude Code CLI
+ */
+export function getDetailedApprovalPrompt(event: HookEvent): string {
+  const { toolName, toolArgs } = event.data;
+  
+  if (!toolName) {
+    return 'Do you want Claude to proceed with this action?';
+  }
+
+  switch (toolName.toLowerCase()) {
+    case 'edit':
+    case 'multiedit':
+    case 'update':
+      const editFile = toolArgs?.file_path;
+      if (editFile) {
+        const fileName = editFile.split('/').pop() || editFile;
+        return `Do you want to make this edit to ${fileName}?`;
+      }
+      return 'Do you want to make this file edit?';
+    
+    case 'write':
+      const writeFile = toolArgs?.file_path;
+      if (writeFile) {
+        const fileName = writeFile.split('/').pop() || writeFile;
+        return `Do you want to create/overwrite ${fileName}?`;
+      }
+      return 'Do you want to create/overwrite this file?';
+    
+    case 'bash':
+      const command = toolArgs?.command;
+      if (command) {
+        return `Do you want to run this command?\n${command}`;
+      }
+      return 'Do you want to run this terminal command?';
+    
+    case 'read':
+      const readFile = toolArgs?.file_path || toolArgs?.notebook_path;
+      if (readFile) {
+        const fileName = readFile.split('/').pop() || readFile;
+        return `Do you want to read ${fileName}?`;
+      }
+      return 'Do you want to read this file?';
+    
+    case 'webfetch':
+      const url = toolArgs?.url;
+      if (url) {
+        return `Do you want to fetch content from:\n${url}`;
+      }
+      return 'Do you want to fetch web content?';
+    
+    case 'websearch':
+      const query = toolArgs?.query;
+      if (query) {
+        return `Do you want to search the web for:\n"${query}"`;
+      }
+      return 'Do you want to perform a web search?';
+    
+    case 'task':
+      const taskDescription = toolArgs?.description;
+      if (taskDescription) {
+        return `Do you want to spawn a sub-agent to:\n${taskDescription}`;
+      }
+      return 'Do you want to spawn a sub-agent?';
+    
+    default:
+      return `Do you want Claude to use the ${toolName} tool?`;
+  }
+}
+
+/**
+ * Get response options for tool approval (like Claude Code CLI)
+ */
+export function getApprovalOptions(event: HookEvent): Array<{label: string, value: string, color: string}> {
+  const { toolName } = event.data;
+  
+  // Standard options for most tools
+  const standardOptions = [
+    { label: 'Yes', value: 'yes', color: 'green' },
+    { label: 'Yes, and don\'t ask again this session', value: 'yes_always', color: 'blue' },
+    { label: 'No, and tell Claude what to do differently', value: 'no_feedback', color: 'red' }
+  ];
+  
+  // Some tools might have specific options in the future
+  switch (toolName?.toLowerCase()) {
+    case 'bash':
+      // High-risk commands might have different options
+      const command = event.data.toolArgs?.command?.toLowerCase() || '';
+      if (command.includes('rm ') || command.includes('delete') || command.includes('sudo')) {
+        return [
+          { label: 'Yes, I understand the risk', value: 'yes', color: 'red' },
+          { label: 'No, cancel this command', value: 'no_feedback', color: 'gray' }
+        ];
+      }
+      break;
+    
+    case 'write':
+      return [
+        { label: 'Yes, create/overwrite the file', value: 'yes', color: 'green' },
+        { label: 'Yes, and don\'t ask again this session', value: 'yes_always', color: 'blue' },
+        { label: 'No, and suggest changes', value: 'no_feedback', color: 'red' }
+      ];
+  }
+  
+  return standardOptions;
 }
 
 /**

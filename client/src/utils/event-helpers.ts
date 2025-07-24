@@ -69,7 +69,7 @@ export function analyzeEvent(event: HookEvent, allEvents: HookEvent[] = []): Eve
   }
 
   // Edit operations (show before/after changes)
-  if (['edit', 'multiedit', 'write'].includes(toolName || '')) {
+  if (['edit', 'multiedit', 'write', 'update'].includes(toolName || '')) {
     const filePath = event.data.toolArgs?.file_path || 'Unknown file';
     
     return {

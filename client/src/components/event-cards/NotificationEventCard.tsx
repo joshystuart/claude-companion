@@ -29,6 +29,15 @@ export const NotificationEventCard: React.FC<NotificationEventCardProps> = ({
   const commandDescription = getCommandDescription(event);
   const riskLevel = getCommandRiskLevel(event);
   const commandIcon = getCommandIcon(event);
+  
+  // Check if the notification contains a prompt with options (like "Would you like to proceed?")
+  const rawMessage = event.data.rawInput?.message || '';
+  const isInputPrompt = rawMessage.includes('Would you like to proceed?') || 
+                       rawMessage.includes('Yes, and') || 
+                       rawMessage.includes('1.') || 
+                       rawMessage.includes('2.') ||
+                       rawMessage.includes('proceed?') ||
+                       rawMessage.includes('No, keep');
 
   const handleApprove = async () => {
     setIsSubmitting(true);
@@ -81,6 +90,22 @@ export const NotificationEventCard: React.FC<NotificationEventCardProps> = ({
       setFeedback('');
     } catch (error) {
       console.error('Failed to inject context:', error);
+    } finally {
+      setIsSubmitting(false);
+    }
+  };
+
+  const handleQuickResponse = async (response: string) => {
+    setIsSubmitting(true);
+    try {
+      await commandsApi.injectContext(
+        event.agentId,
+        event.sessionId,
+        response,
+        event.timestamp
+      );
+    } catch (error) {
+      console.error('Failed to send response:', error);
     } finally {
       setIsSubmitting(false);
     }
@@ -199,6 +224,83 @@ export const NotificationEventCard: React.FC<NotificationEventCardProps> = ({
           )}
         </div>
       </div>
+
+      {/* Enhanced Notification Message with Options (for input prompts) */}
+      {isInputPrompt && rawMessage && (
+        <div className="bg-blue-50 border border-blue-200 rounded-lg p-4 mb-3">
+          <div className="text-sm font-medium text-blue-800 mb-2">Claude is asking for input:</div>
+          <div className="text-sm text-gray-700 mb-3 whitespace-pre-line">
+            {rawMessage}
+          </div>
+          
+          {/* Quick Response Options */}
+          <div className="space-y-2">
+            <div className="text-xs font-medium text-blue-700 uppercase mb-2">Quick Response Options:</div>
+            <div className="flex flex-wrap gap-2">
+              {/* Extract and create buttons for numbered options */}
+              {rawMessage.includes('1.') && (
+                <>
+                  <button
+                    onClick={() => handleQuickResponse('1')}
+                    disabled={isSubmitting}
+                    className="px-3 py-1 bg-green-500 text-white text-sm rounded hover:bg-green-600 transition-colors disabled:opacity-50"
+                  >
+                    Option 1
+                  </button>
+                  {rawMessage.includes('2.') && (
+                    <button
+                      onClick={() => handleQuickResponse('2')}
+                      disabled={isSubmitting}
+                      className="px-3 py-1 bg-blue-500 text-white text-sm rounded hover:bg-blue-600 transition-colors disabled:opacity-50"
+                    >
+                      Option 2
+                    </button>
+                  )}
+                  {rawMessage.includes('3.') && (
+                    <button
+                      onClick={() => handleQuickResponse('3')}
+                      disabled={isSubmitting}
+                      className="px-3 py-1 bg-purple-500 text-white text-sm rounded hover:bg-purple-600 transition-colors disabled:opacity-50"
+                    >
+                      Option 3
+                    </button>
+                  )}
+                </>
+              )}
+              
+              {/* Generic Yes/No for proceed questions */}
+              {rawMessage.includes('proceed?') && !rawMessage.includes('1.') && (
+                <>
+                  <button
+                    onClick={() => handleQuickResponse('Yes')}
+                    disabled={isSubmitting}
+                    className="px-3 py-1 bg-green-500 text-white text-sm rounded hover:bg-green-600 transition-colors disabled:opacity-50"
+                  >
+                    Yes
+                  </button>
+                  <button
+                    onClick={() => handleQuickResponse('No')}
+                    disabled={isSubmitting}
+                    className="px-3 py-1 bg-red-500 text-white text-sm rounded hover:bg-red-600 transition-colors disabled:opacity-50"
+                  >
+                    No
+                  </button>
+                </>
+              )}
+              
+              {/* Custom Input Option */}
+              {onToggleControls && (
+                <button
+                  onClick={onToggleControls}
+                  className="px-3 py-1 bg-gray-500 text-white text-sm rounded hover:bg-gray-600 transition-colors"
+                >
+                  Custom Response
+                </button>
+              )}
+            </div>
+          </div>
+        </div>
+      )}
 
       {/* Additional Message Content (only if different from command details) */}
       {event.data.message && event.data.toolName && (
