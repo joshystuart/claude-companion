@@ -5,6 +5,7 @@ import { AlertCircle, Clock, User, Shield } from 'lucide-react';
 interface GenericEventCardProps {
   event: HookEvent;
   isActive: boolean;
+  isLatest?: boolean;
   onToggleControls?: () => void;
   showControls?: boolean;
 }
@@ -12,6 +13,7 @@ interface GenericEventCardProps {
 export const GenericEventCard: React.FC<GenericEventCardProps> = ({
   event,
   isActive,
+  isLatest = false,
   onToggleControls,
   showControls
 }) => {
@@ -52,13 +54,19 @@ export const GenericEventCard: React.FC<GenericEventCardProps> = ({
   };
 
   return (
-    <div className={`border rounded-lg p-4 mb-3 ${
+    <div className={`border rounded-lg p-3 mb-2 transition-all duration-500 ${
+      isLatest ? 'ring-2 ring-blue-400 bg-blue-50 shadow-lg animate-spotlight-pulse' :
       isActive ? 'border-indigo-500 bg-indigo-50' : 
       event.data.riskLevel === 'high' ? 'border-red-300 bg-red-50' :
       event.data.riskLevel === 'medium' ? 'border-yellow-300 bg-yellow-50' :
       'border-gray-200'
     }`}>
-      <div className="flex justify-between items-start mb-3">
+      {isLatest && (
+        <div className="text-xs text-blue-600 font-semibold mb-2 animate-fade-in">
+          LATEST EVENT
+        </div>
+      )}
+      <div className="flex justify-between items-start mb-2">
         <div className="flex items-center space-x-2">
           <span className="text-lg">{getHookTypeIcon()}</span>
           <h4 className="font-medium text-gray-900">{title}</h4>
@@ -75,19 +83,11 @@ export const GenericEventCard: React.FC<GenericEventCardProps> = ({
           )}
         </div>
         
-        {isActive && onToggleControls && (
-          <button
-            onClick={onToggleControls}
-            className="text-sm px-3 py-1 bg-indigo-500 text-white rounded hover:bg-indigo-600 transition-colors"
-          >
-            {showControls ? 'Hide Controls' : 'Control'}
-          </button>
-        )}
       </div>
 
       {/* Suggested action */}
       {event.data.suggestedAction && (
-        <div className="bg-blue-50 p-2 rounded-md mb-3 border-l-4 border-blue-400">
+        <div className="bg-blue-50 p-2 rounded-md mb-2 border-l-4 border-blue-400">
           <div className="flex items-start space-x-2">
             <Shield className="w-4 h-4 text-blue-600 mt-0.5" />
             <div>
@@ -99,13 +99,13 @@ export const GenericEventCard: React.FC<GenericEventCardProps> = ({
       )}
 
       {/* Main content */}
-      <div className="text-sm text-gray-600 mb-3">
+      <div className="text-sm text-gray-600 mb-2">
         {event.data.message || 'No additional details available'}
       </div>
 
       {/* Tool arguments */}
       {event.data.toolArgs && (
-        <details className="mb-3">
+        <details className="mb-2">
           <summary className="text-xs text-gray-500 cursor-pointer hover:text-gray-700">
             View tool arguments
           </summary>

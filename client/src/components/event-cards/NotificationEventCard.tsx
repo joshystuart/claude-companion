@@ -8,6 +8,7 @@ import clsx from 'clsx';
 interface NotificationEventCardProps {
   event: HookEvent;
   isActive: boolean;
+  isLatest?: boolean;
   onToggleControls?: () => void;
   showControls?: boolean;
 }
@@ -15,6 +16,7 @@ interface NotificationEventCardProps {
 export const NotificationEventCard: React.FC<NotificationEventCardProps> = ({
   event,
   isActive,
+  isLatest = false,
   onToggleControls,
   showControls
 }) => {
@@ -115,12 +117,17 @@ export const NotificationEventCard: React.FC<NotificationEventCardProps> = ({
 
   return (
     <div className={clsx(
-      'border rounded-lg p-4 mb-3 transition-all',
-      getCardBorderColor(),
+      'border rounded-lg p-3 mb-2 transition-all duration-500',
+      isLatest ? 'ring-2 ring-blue-400 bg-blue-50 shadow-lg animate-spotlight-pulse' : getCardBorderColor(),
       requiresApproval && isActive && 'shadow-md'
     )}>
+      {isLatest && (
+        <div className="text-xs text-blue-600 font-semibold mb-2 animate-fade-in">
+          LATEST EVENT
+        </div>
+      )}
       {/* Header */}
-      <div className="flex justify-between items-start mb-3">
+      <div className="flex justify-between items-start mb-2">
         <div className="flex items-center space-x-3">
           <span className="text-xl">{commandIcon}</span>
           
@@ -141,51 +148,45 @@ export const NotificationEventCard: React.FC<NotificationEventCardProps> = ({
           </div>
         </div>
 
-        {/* Quick Actions for Approval Events */}
-        {requiresApproval && isActive && !showControls && (
+        {/* Inline Approval Controls */}
+        {requiresApproval && isActive && (
           <div className="flex items-center space-x-2">
             <button
               onClick={handleApprove}
               disabled={isSubmitting}
-              className="p-2 bg-green-500 text-white rounded-full hover:bg-green-600 transition-colors disabled:opacity-50"
-              title="Quick Approve"
+              className="flex items-center space-x-1 px-3 py-1 bg-green-600 text-white text-sm rounded hover:bg-green-700 transition-colors disabled:opacity-50"
+              title="Approve Action"
             >
               <CheckCircle className="w-4 h-4" />
+              <span>Approve</span>
             </button>
             <button
               onClick={handleDeny}
               disabled={isSubmitting}
-              className="p-2 bg-red-500 text-white rounded-full hover:bg-red-600 transition-colors disabled:opacity-50"
-              title="Quick Deny"
+              className="flex items-center space-x-1 px-3 py-1 bg-red-600 text-white text-sm rounded hover:bg-red-700 transition-colors disabled:opacity-50"
+              title="Deny Action"
             >
               <XCircle className="w-4 h-4" />
+              <span>Deny</span>
             </button>
             {onToggleControls && (
               <button
                 onClick={onToggleControls}
-                className="p-2 bg-gray-500 text-white rounded-full hover:bg-gray-600 transition-colors"
-                title="More Options"
+                className="flex items-center space-x-1 px-3 py-1 bg-blue-600 text-white text-sm rounded hover:bg-blue-700 transition-colors"
+                title="Custom Input"
               >
                 <MessageSquare className="w-4 h-4" />
+                <span>Input</span>
               </button>
             )}
           </div>
         )}
 
-        {/* Toggle Controls Button for Non-Approval Events */}
-        {!requiresApproval && isActive && onToggleControls && (
-          <button
-            onClick={onToggleControls}
-            className="text-sm px-3 py-1 bg-indigo-500 text-white rounded hover:bg-indigo-600 transition-colors"
-          >
-            {showControls ? 'Hide Controls' : 'Control'}
-          </button>
-        )}
       </div>
 
       {/* Command Details */}
       <div className={clsx(
-        'p-3 rounded-md mb-3 border-l-4',
+        'p-3 rounded-md mb-2 border-l-4',
         requiresApproval ? 'bg-orange-50 border-orange-400' : 'bg-gray-50 border-gray-300'
       )}>
         <div className="text-sm text-gray-800">
@@ -201,23 +202,23 @@ export const NotificationEventCard: React.FC<NotificationEventCardProps> = ({
 
       {/* Additional Message Content (only if different from command details) */}
       {event.data.message && event.data.toolName && (
-        <div className="text-sm text-gray-600 mb-3">
+        <div className="text-sm text-gray-600 mb-2">
           {event.data.message}
         </div>
       )}
 
       {/* Suggested Action */}
       {event.data.suggestedAction && (
-        <div className="bg-blue-50 p-2 rounded-md mb-3 border-l-4 border-blue-400">
+        <div className="bg-blue-50 p-2 rounded-md mb-2 border-l-4 border-blue-400">
           <div className="text-xs font-medium text-blue-700 uppercase mb-1">Suggested Action</div>
           <p className="text-sm text-gray-700">{event.data.suggestedAction}</p>
         </div>
       )}
 
-      {/* Expanded Controls */}
+      {/* Custom Input Panel */}
       {showControls && isActive && (
         <div className="mt-4 p-4 bg-white border border-gray-200 rounded-lg shadow-sm">
-          <h5 className="text-sm font-medium text-gray-900 mb-3">Event Controls</h5>
+          <h5 className="text-sm font-medium text-gray-900 mb-3">Custom Input</h5>
           
           <div className="space-y-3">
             <div>
@@ -256,21 +257,21 @@ export const NotificationEventCard: React.FC<NotificationEventCardProps> = ({
                     className="flex-1 px-4 py-2 bg-green-500 text-white rounded hover:bg-green-600 transition-colors disabled:opacity-50"
                     disabled={isSubmitting}
                   >
-                    {isSubmitting ? 'Approving...' : 'Approve'}
+                    {isSubmitting ? 'Approving...' : 'Approve with Custom Reason'}
                   </button>
                   <button
                     onClick={handleDeny}
                     className="flex-1 px-4 py-2 bg-red-500 text-white rounded hover:bg-red-600 transition-colors disabled:opacity-50"
                     disabled={isSubmitting}
                   >
-                    {isSubmitting ? 'Denying...' : 'Deny'}
+                    {isSubmitting ? 'Denying...' : 'Deny with Custom Reason'}
                   </button>
                 </>
               )}
               {feedback && (
                 <button
                   onClick={handleInjectContext}
-                  className="flex-1 px-4 py-2 bg-blue-500 text-white rounded hover:bg-blue-600 transition-colors disabled:opacity-50"
+                  className="px-4 py-2 bg-blue-500 text-white rounded hover:bg-blue-600 transition-colors disabled:opacity-50"
                   disabled={isSubmitting}
                 >
                   {isSubmitting ? 'Sending...' : 'Inject Context'}
@@ -297,7 +298,7 @@ export const NotificationEventCard: React.FC<NotificationEventCardProps> = ({
         {requiresApproval && isActive && (
           <div className="flex items-center space-x-1">
             <ShieldAlert className="w-3 h-3 text-orange-500" />
-            <span className="text-orange-600 font-medium">Awaiting Approval</span>
+            <span className="text-orange-600 font-medium">Action Required</span>
           </div>
         )}
       </div>

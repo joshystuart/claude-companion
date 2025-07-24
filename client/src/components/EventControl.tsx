@@ -16,10 +16,11 @@ import {
 
 interface EventControlProps {
   event: HookEvent;
+  isLatest?: boolean;
   onCommandSent?: () => void;
 }
 
-export const EventControl: React.FC<EventControlProps> = ({ event, onCommandSent }) => {
+export const EventControl: React.FC<EventControlProps> = ({ event, isLatest = false, onCommandSent }) => {
   const [showControls, setShowControls] = useState(false);
   const [customReason, setCustomReason] = useState('');
   const [feedback, setFeedback] = useState('');
@@ -92,6 +93,7 @@ export const EventControl: React.FC<EventControlProps> = ({ event, onCommandSent
     const cardProps = {
       event,
       isActive: active,
+      isLatest,
       onToggleControls: active ? () => setShowControls(!showControls) : undefined,
       showControls
     };

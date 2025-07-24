@@ -5,6 +5,7 @@ import { Bot, Clock, User, Zap } from 'lucide-react';
 interface TaskEventCardProps {
   event: HookEvent;
   isActive: boolean;
+  isLatest?: boolean;
   onToggleControls?: () => void;
   showControls?: boolean;
 }
@@ -12,6 +13,7 @@ interface TaskEventCardProps {
 export const TaskEventCard: React.FC<TaskEventCardProps> = ({
   event,
   isActive,
+  isLatest = false,
   onToggleControls,
   showControls
 }) => {
@@ -22,8 +24,16 @@ export const TaskEventCard: React.FC<TaskEventCardProps> = ({
   const truncatedPrompt = prompt.length > 200 ? prompt.slice(0, 200) + '...' : prompt;
 
   return (
-    <div className={`border rounded-lg p-4 mb-3 ${isActive ? 'border-cyan-500 bg-cyan-50' : 'border-gray-200'}`}>
-      <div className="flex justify-between items-start mb-3">
+    <div className={`border rounded-lg p-3 mb-2 transition-all duration-500 ${
+      isLatest ? 'ring-2 ring-blue-400 bg-blue-50 shadow-lg animate-spotlight-pulse' :
+      isActive ? 'border-cyan-500 bg-cyan-50' : 'border-gray-200'
+    }`}>
+      {isLatest && (
+        <div className="text-xs text-blue-600 font-semibold mb-2 animate-fade-in">
+          LATEST EVENT
+        </div>
+      )}
+      <div className="flex justify-between items-start mb-2">
         <div className="flex items-center space-x-2">
           <Bot className="w-5 h-5 text-cyan-600" />
           <h4 className="font-medium text-gray-900">{description}</h4>
@@ -34,18 +44,10 @@ export const TaskEventCard: React.FC<TaskEventCardProps> = ({
           )}
         </div>
         
-        {isActive && onToggleControls && (
-          <button
-            onClick={onToggleControls}
-            className="text-sm px-3 py-1 bg-cyan-500 text-white rounded hover:bg-cyan-600 transition-colors"
-          >
-            {showControls ? 'Hide Controls' : 'Control'}
-          </button>
-        )}
       </div>
 
       {/* Task prompt/description */}
-      <div className="bg-gradient-to-r from-cyan-50 to-blue-50 p-3 rounded-md mb-3 border-l-4 border-cyan-400">
+      <div className="bg-gradient-to-r from-cyan-50 to-blue-50 p-3 rounded-md mb-2 border-l-4 border-cyan-400">
         <div className="flex items-start space-x-2">
           <Zap className="w-4 h-4 text-cyan-600 mt-0.5" />
           <div>

@@ -7,6 +7,7 @@ import clsx from 'clsx';
 interface EditEventCardProps {
   event: HookEvent;
   isActive: boolean;
+  isLatest?: boolean;
   onToggleControls?: () => void;
   showControls?: boolean;
 }
@@ -14,6 +15,7 @@ interface EditEventCardProps {
 export const EditEventCard: React.FC<EditEventCardProps> = ({
   event,
   isActive,
+  isLatest = false,
   onToggleControls,
   showControls
 }) => {
@@ -119,16 +121,13 @@ export const EditEventCard: React.FC<EditEventCardProps> = ({
       <div className="space-y-3">
         {/* Before */}
         {oldStr && (
-          <div>
-            <div className="text-xs font-medium text-red-700 mb-1 flex items-center">
-              <span className="w-2 h-2 bg-red-500 rounded-full mr-2"></span>
-              Before
-            </div>
-            <div className="bg-red-50 border border-red-200 rounded p-2 overflow-x-auto">
+          <div className="bg-red-50 border border-red-200 rounded p-3">
+            <div className="text-xs text-red-600 font-semibold mb-2">BEFORE</div>
+            <div className="overflow-x-auto">
               <SyntaxHighlight 
                 code={truncateString(oldStr, 300)} 
                 language={language}
-                className="text-red-800"
+                className="text-sm"
               />
             </div>
           </div>
@@ -136,16 +135,13 @@ export const EditEventCard: React.FC<EditEventCardProps> = ({
         
         {/* After */}
         {newStr && (
-          <div>
-            <div className="text-xs font-medium text-green-700 mb-1 flex items-center">
-              <span className="w-2 h-2 bg-green-500 rounded-full mr-2"></span>
-              After
-            </div>
-            <div className="bg-green-50 border border-green-200 rounded p-2 overflow-x-auto">
+          <div className="bg-green-50 border border-green-200 rounded p-3">
+            <div className="text-xs text-green-600 font-semibold mb-2">AFTER</div>
+            <div className="overflow-x-auto">
               <SyntaxHighlight 
                 code={truncateString(newStr, 300)} 
                 language={language}
-                className="text-green-800"
+                className="text-sm"
               />
             </div>
           </div>
@@ -160,7 +156,7 @@ export const EditEventCard: React.FC<EditEventCardProps> = ({
     return (
       <div className="space-y-2">
         <div className="text-sm font-medium text-gray-700 mb-2">
-          Changes ({editInfo.edits.length}):
+          Changes (showing {Math.min(3, editInfo.edits.length)} of {editInfo.edits.length}):
         </div>
         {editInfo.edits.slice(0, 3).map((edit: any, index: number) => (
           <div key={index} className="border border-gray-200 rounded p-2 bg-gray-50">
@@ -170,23 +166,23 @@ export const EditEventCard: React.FC<EditEventCardProps> = ({
             {renderSimpleDiff(edit.old_string, edit.new_string)}
           </div>
         ))}
-        
-        {editInfo.edits.length > 3 && (
-          <div className="text-xs text-gray-500 text-center py-2">
-            ... and {editInfo.edits.length - 3} more changes
-          </div>
-        )}
       </div>
     );
   };
 
   return (
     <div className={clsx(
-      'border rounded-lg p-4 mb-3',
+      'border rounded-lg p-3 mb-2 transition-all duration-500',
+      isLatest ? 'ring-2 ring-blue-400 bg-blue-50 shadow-lg animate-spotlight-pulse' :
       isActive ? 'border-indigo-500 bg-indigo-50' : 'border-gray-200'
     )}>
+      {isLatest && (
+        <div className="text-xs text-blue-600 font-semibold mb-2 animate-fade-in">
+          LATEST EVENT
+        </div>
+      )}
       {/* Header */}
-      <div className="flex justify-between items-start mb-3">
+      <div className="flex justify-between items-start mb-2">
         <div className="flex items-center space-x-3">
           <div className="p-2 bg-blue-100 text-blue-600 rounded-lg">
             {getOperationIcon()}
@@ -205,29 +201,22 @@ export const EditEventCard: React.FC<EditEventCardProps> = ({
         </div>
 
         <div className="flex items-center space-x-2">
-          {/* Toggle Details */}
-          <button
-            onClick={() => setShowDetails(!showDetails)}
-            className="p-1 text-gray-500 hover:text-gray-700 transition-colors"
-            title={showDetails ? 'Hide Details' : 'Show Details'}
-          >
-            {showDetails ? <EyeOff className="w-4 h-4" /> : <Eye className="w-4 h-4" />}
-          </button>
-          
-          {/* Control Toggle */}
-          {isActive && onToggleControls && (
+          {/* Toggle Additional Details (only for multi-edits with >3 changes) */}
+          {isMultiEdit && editInfo.edits.length > 3 && (
             <button
-              onClick={onToggleControls}
-              className="text-sm px-3 py-1 bg-indigo-500 text-white rounded hover:bg-indigo-600 transition-colors"
+              onClick={() => setShowDetails(!showDetails)}
+              className="p-1 text-gray-500 hover:text-gray-700 transition-colors"
+              title={showDetails ? `Hide ${editInfo.edits.length - 3} Additional Changes` : `Show ${editInfo.edits.length - 3} More Changes`}
             >
-              {showControls ? 'Hide Controls' : 'Control'}
+              {showDetails ? <EyeOff className="w-4 h-4" /> : <Eye className="w-4 h-4" />}
             </button>
           )}
+          
         </div>
       </div>
 
       {/* Edit Summary */}
-      <div className="bg-gray-50 rounded-lg p-3 mb-3">
+      <div className="bg-gray-50 rounded-lg p-3 mb-2">
         <div className="text-sm text-gray-700">
           {isWrite && (
             <span>Creating new file with {editInfo.newString.length} characters</span>
@@ -244,16 +233,31 @@ export const EditEventCard: React.FC<EditEventCardProps> = ({
         </div>
       </div>
 
-      {/* Detailed Changes */}
-      {showDetails && (
-        <div className="mb-3">
-          {isMultiEdit ? renderMultiEditChanges() : renderSimpleDiff(editInfo.oldString, editInfo.newString)}
+      {/* Before/After Changes - Always Visible */}
+      <div className="mb-2">
+        {isMultiEdit ? renderMultiEditChanges() : renderSimpleDiff(editInfo.oldString, editInfo.newString)}
+      </div>
+
+      {/* Additional Detailed Changes (expandable) */}
+      {showDetails && isMultiEdit && editInfo.edits.length > 3 && (
+        <div className="mb-2">
+          <div className="text-sm font-medium text-gray-700 mb-2">
+            Remaining Changes ({editInfo.edits.length - 3}):
+          </div>
+          {editInfo.edits.slice(3).map((edit: any, index: number) => (
+            <div key={index + 3} className="border border-gray-200 rounded p-2 bg-gray-50 mb-2">
+              <div className="text-xs font-medium text-gray-600 mb-1">
+                Change #{index + 4} {edit.replace_all && '(Replace All)'}
+              </div>
+              {renderSimpleDiff(edit.old_string, edit.new_string)}
+            </div>
+          ))}
         </div>
       )}
 
       {/* Additional Info */}
       {toolArgs && Object.keys(toolArgs).length > 0 && showDetails && (
-        <details className="mb-3">
+        <details className="mb-2">
           <summary className="text-xs text-gray-500 cursor-pointer hover:text-gray-700">
             View raw tool arguments
           </summary>

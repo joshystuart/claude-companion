@@ -71,7 +71,7 @@ export function Dashboard() {
   };
 
   return (
-    <div className="space-y-6">
+    <div className="space-y-4">
       {/* Header */}
       <div className="flex items-center justify-between">
         <div>
@@ -99,8 +99,8 @@ export function Dashboard() {
       </div>
 
       {/* Stats Cards */}
-      <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
-        <div className="card p-6">
+      <div className="grid grid-cols-1 md:grid-cols-4 gap-3">
+        <div className="card p-4">
           <div className="flex items-center">
             <Computer className="h-8 w-8 text-primary-600" />
             <div className="ml-4">
@@ -110,7 +110,7 @@ export function Dashboard() {
           </div>
         </div>
         
-        <div className="card p-6">
+        <div className="card p-4">
           <div className="flex items-center">
             <Circle className="h-8 w-8 text-green-600" />
             <div className="ml-4">
@@ -122,7 +122,7 @@ export function Dashboard() {
           </div>
         </div>
         
-        <div className="card p-6">
+        <div className="card p-4">
           <div className="flex items-center">
             <Terminal className="h-8 w-8 text-blue-600" />
             <div className="ml-4">
@@ -132,7 +132,7 @@ export function Dashboard() {
           </div>
         </div>
         
-        <div className="card p-6">
+        <div className="card p-4">
           <div className="flex items-center">
             <Clock className="h-8 w-8 text-yellow-600" />
             <div className="ml-4">
@@ -165,7 +165,7 @@ export function Dashboard() {
       )}
 
       {/* Header with Session Controls */}
-      <div className="flex items-center justify-between mb-6">
+      <div className="flex items-center justify-between mb-4">
         <div className="flex items-center space-x-4">
           <h2 className="text-xl font-semibold text-gray-900">
             {selectedAgentId ? `Agent: ${agentList.find(a => a.id === selectedAgentId)?.id}` : 'All Agents'}
@@ -211,11 +211,11 @@ export function Dashboard() {
       {/* Events Feed */}
       {agentList.length > 0 && (
         <div className="card">
-          <div className="p-6 border-b border-gray-200">
+          <div className="p-4 border-b border-gray-200">
             <h3 className="text-lg font-medium text-gray-900">Recent Events</h3>
           </div>
           
-          <div className="max-h-96 overflow-y-auto">
+          <div className="max-h-[60vh] overflow-y-auto">
             {events.length === 0 ? (
               <div className="p-6 text-center text-gray-500">
                 <Terminal className="mx-auto h-12 w-12 text-gray-300" />
@@ -225,11 +225,12 @@ export function Dashboard() {
                 </p>
               </div>
             ) : (
-              <div className="space-y-2 p-4">
-                {events.map((event) => (
+              <div className="space-y-2 p-3">
+                {events.map((event, index) => (
                   <EventControl
                     key={`${event.agentId}-${event.timestamp}`}
                     event={event}
+                    isLatest={index === 0}
                     onCommandSent={() => {
                       // Optionally refresh or show notification
                     }}

@@ -5,6 +5,7 @@ import { Globe, Clock, User, Search, ExternalLink } from 'lucide-react';
 interface WebEventCardProps {
   event: HookEvent;
   isActive: boolean;
+  isLatest?: boolean;
   onToggleControls?: () => void;
   showControls?: boolean;
 }
@@ -12,6 +13,7 @@ interface WebEventCardProps {
 export const WebEventCard: React.FC<WebEventCardProps> = ({
   event,
   isActive,
+  isLatest = false,
   onToggleControls,
   showControls
 }) => {
@@ -40,8 +42,16 @@ export const WebEventCard: React.FC<WebEventCardProps> = ({
   };
 
   return (
-    <div className={`border rounded-lg p-4 mb-3 ${isActive ? 'border-purple-500 bg-purple-50' : 'border-gray-200'}`}>
-      <div className="flex justify-between items-start mb-3">
+    <div className={`border rounded-lg p-3 mb-2 transition-all duration-500 ${
+      isLatest ? 'ring-2 ring-blue-400 bg-blue-50 shadow-lg animate-spotlight-pulse' :
+      isActive ? 'border-purple-500 bg-purple-50' : 'border-gray-200'
+    }`}>
+      {isLatest && (
+        <div className="text-xs text-blue-600 font-semibold mb-2 animate-fade-in">
+          LATEST EVENT
+        </div>
+      )}
+      <div className="flex justify-between items-start mb-2">
         <div className="flex items-center space-x-2">
           {getIcon()}
           <h4 className="font-medium text-gray-900 truncate max-w-md">
@@ -54,18 +64,10 @@ export const WebEventCard: React.FC<WebEventCardProps> = ({
           )}
         </div>
         
-        {isActive && onToggleControls && (
-          <button
-            onClick={onToggleControls}
-            className="text-sm px-3 py-1 bg-purple-500 text-white rounded hover:bg-purple-600 transition-colors"
-          >
-            {showControls ? 'Hide Controls' : 'Control'}
-          </button>
-        )}
       </div>
 
       {/* URL or Query */}
-      <div className="mb-3">
+      <div className="mb-2">
         <div className="flex items-center space-x-2 mb-2">
           <span className="text-xs font-medium text-gray-500 uppercase">
             {isWebSearch ? 'Query' : 'URL'}
@@ -83,7 +85,7 @@ export const WebEventCard: React.FC<WebEventCardProps> = ({
 
       {/* Purpose/Prompt */}
       {prompt && (
-        <div className="mb-3">
+        <div className="mb-2">
           <div className="text-xs font-medium text-gray-500 uppercase mb-2">Purpose</div>
           <div className="bg-blue-50 p-2 rounded-md">
             <p className="text-sm text-gray-700">{prompt}</p>
@@ -93,7 +95,7 @@ export const WebEventCard: React.FC<WebEventCardProps> = ({
 
       {/* Additional search parameters for WebSearch */}
       {isWebSearch && event.data.toolArgs && (
-        <div className="mb-3">
+        <div className="mb-2">
           {event.data.toolArgs.allowed_domains && (
             <div className="text-xs text-gray-600 mb-1">
               <span className="font-medium">Allowed domains:</span> {event.data.toolArgs.allowed_domains.join(', ')}

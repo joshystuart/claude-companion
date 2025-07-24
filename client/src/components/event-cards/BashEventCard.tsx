@@ -5,6 +5,7 @@ import { Terminal, Clock, User } from 'lucide-react';
 interface BashEventCardProps {
   event: HookEvent;
   isActive: boolean;
+  isLatest?: boolean;
   onToggleControls?: () => void;
   showControls?: boolean;
 }
@@ -12,6 +13,7 @@ interface BashEventCardProps {
 export const BashEventCard: React.FC<BashEventCardProps> = ({
   event,
   isActive,
+  isLatest = false,
   onToggleControls,
   showControls
 }) => {
@@ -20,8 +22,16 @@ export const BashEventCard: React.FC<BashEventCardProps> = ({
   const timeout = event.data.toolArgs?.timeout;
 
   return (
-    <div className={`border rounded-lg p-4 mb-3 ${isActive ? 'border-blue-500 bg-blue-50' : 'border-gray-200'}`}>
-      <div className="flex justify-between items-start mb-3">
+    <div className={`border rounded-lg p-3 mb-2 transition-all duration-500 ${
+      isLatest ? 'ring-2 ring-blue-400 bg-blue-50 shadow-lg animate-spotlight-pulse' :
+      isActive ? 'border-blue-500 bg-blue-50' : 'border-gray-200'
+    }`}>
+      {isLatest && (
+        <div className="text-xs text-blue-600 font-semibold mb-2 animate-fade-in">
+          LATEST EVENT
+        </div>
+      )}
+      <div className="flex justify-between items-start mb-2">
         <div className="flex items-center space-x-2">
           <Terminal className="w-5 h-5 text-gray-600" />
           <h4 className="font-medium text-gray-900">{description}</h4>
@@ -32,18 +42,10 @@ export const BashEventCard: React.FC<BashEventCardProps> = ({
           )}
         </div>
         
-        {isActive && onToggleControls && (
-          <button
-            onClick={onToggleControls}
-            className="text-sm px-3 py-1 bg-blue-500 text-white rounded hover:bg-blue-600 transition-colors"
-          >
-            {showControls ? 'Hide Controls' : 'Control'}
-          </button>
-        )}
       </div>
 
       {/* Command body - formatted as code */}
-      <div className="bg-gray-900 text-green-400 p-3 rounded-md font-mono text-sm mb-3 overflow-x-auto">
+      <div className="bg-gray-900 text-green-400 p-3 rounded-md font-mono text-sm mb-2 overflow-x-auto">
         <pre className="whitespace-pre-wrap">{command}</pre>
       </div>
 

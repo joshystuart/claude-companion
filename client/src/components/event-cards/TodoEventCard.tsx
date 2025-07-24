@@ -5,6 +5,7 @@ import { CheckSquare, Clock, User } from 'lucide-react';
 interface TodoEventCardProps {
   event: HookEvent;
   isActive: boolean;
+  isLatest?: boolean;
   onToggleControls?: () => void;
   showControls?: boolean;
 }
@@ -12,6 +13,7 @@ interface TodoEventCardProps {
 export const TodoEventCard: React.FC<TodoEventCardProps> = ({
   event,
   isActive,
+  isLatest = false,
   onToggleControls,
   showControls
 }) => {
@@ -31,8 +33,16 @@ export const TodoEventCard: React.FC<TodoEventCardProps> = ({
   };
 
   return (
-    <div className={`border rounded-lg p-4 mb-3 ${isActive ? 'border-orange-500 bg-orange-50' : 'border-gray-200'}`}>
-      <div className="flex justify-between items-start mb-3">
+    <div className={`border rounded-lg p-3 mb-2 transition-all duration-500 ${
+      isLatest ? 'ring-2 ring-blue-400 bg-blue-50 shadow-lg animate-spotlight-pulse' :
+      isActive ? 'border-orange-500 bg-orange-50' : 'border-gray-200'
+    }`}>
+      {isLatest && (
+        <div className="text-xs text-blue-600 font-semibold mb-2 animate-fade-in">
+          LATEST EVENT
+        </div>
+      )}
+      <div className="flex justify-between items-start mb-2">
         <div className="flex items-center space-x-2">
           <CheckSquare className="w-5 h-5 text-gray-600" />
           <h4 className="font-medium text-gray-900">Task List Update</h4>
@@ -43,18 +53,10 @@ export const TodoEventCard: React.FC<TodoEventCardProps> = ({
           )}
         </div>
         
-        {isActive && onToggleControls && (
-          <button
-            onClick={onToggleControls}
-            className="text-sm px-3 py-1 bg-orange-500 text-white rounded hover:bg-orange-600 transition-colors"
-          >
-            {showControls ? 'Hide Controls' : 'Control'}
-          </button>
-        )}
       </div>
 
       {/* Task summary */}
-      <div className="mb-3">
+      <div className="mb-2">
         <div className="flex items-center space-x-4 text-sm text-gray-600 mb-2">
           <span>✅ {completed.length} completed</span>
           <span>🔄 {inProgress.length} in progress</span>
@@ -82,7 +84,7 @@ export const TodoEventCard: React.FC<TodoEventCardProps> = ({
       </div>
 
       {/* Metadata */}
-      <div className="flex items-center space-x-4 text-xs text-gray-500 mt-3">
+      <div className="flex items-center space-x-4 text-xs text-gray-500 mt-2">
         <div className="flex items-center space-x-1">
           <Clock className="w-3 h-3" />
           <span>{new Date(event.timestamp).toLocaleTimeString()}</span>
