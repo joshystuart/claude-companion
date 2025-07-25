@@ -1,33 +1,35 @@
 const { spawn } = require('child_process');
-const fs = require('fs');
-const path = require('path');
+const Logger = require('./logger');
 
 class ClaudeWrapper {
     constructor() {
-        this.logFile = path.join(__dirname, 'claude-session.log');
+        this.logger = new Logger();
         this.child = null;
     }
 
     log(message, type = 'INFO') {
-        const timestamp = new Date().toISOString();
-        const logEntry = `[${timestamp}] [${type}] ${message}\n`;
-        
-        // Log to console
-        console.log(logEntry.trim());
-        
-        // Log to file
-        fs.appendFileSync(this.logFile, logEntry);
+        this.logger.log(message, type);
     }
 
     start() {
         this.log('Starting Claude CLI wrapper...');
         
-        // Spawn the claude process with inherited stdio for proper TTY handling
-        this.child = spawn('claude', process.argv.slice(2), {
-            stdio: 'inherit'
+        // Start Claude with output capture using tee
+        const args = process.argv.slice(2);
+        
+        // Start Claude directly without piping to maintain TTY
+        this.log(`Running command: claude ${args.join(' ')}`);
+        
+        this.child = spawn('claude', args, {
+            stdio: 'inherit',
+            env: { ...process.env, FORCE_COLOR: '1' }
         });
+        
+        // Capture output using the logger's built-in capability
+        this.logger.captureAndForwardOutput(this.child);
 
         this.log('Claude process spawned with PID: ' + this.child.pid);
+        this.log('Output being captured to: ' + this.logger.outputFile);
 
         // Handle process close
         this.child.on('close', (code) => {

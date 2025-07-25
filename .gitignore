@@ -37,3 +37,4 @@ infrastructure/cdk.context.json
 storybook-static
 
 .env
+tsconfig.tsbuildinfo
