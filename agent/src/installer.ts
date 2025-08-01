@@ -20,6 +20,79 @@ const CLAUDE_CONFIG_DIR = join(homedir(), '.claude');
 const CLAUDE_SETTINGS_FILE = join(CLAUDE_CONFIG_DIR, 'settings.json');
 const COMPANION_CONFIG_FILE = join(CLAUDE_CONFIG_DIR, 'companion.json');
 
+// Helper function to check if a hook command belongs to AFK
+export function isAFKHook(command: string): boolean {
+  return command.includes('claude-companion-agent') || 
+         command.includes('claude-companion/agent') ||
+         command.includes('pre-tool-use.js') ||
+         command.includes('post-tool-use.js') ||
+         command.includes('stop.js') ||
+         command.includes('notification.js');
+}
+
+// Helper function to merge AFK hooks with existing hooks
+export function mergeHooks(existingHooks: any, afkHooks: any): any {
+  const merged = { ...existingHooks };
+  
+  for (const [hookType, afkHookArray] of Object.entries(afkHooks)) {
+    if (!merged[hookType]) {
+      // No existing hooks of this type, just add AFK hooks
+      merged[hookType] = afkHookArray;
+    } else {
+      // Merge with existing hooks, ensuring we don't duplicate AFK hooks
+      const existingArray = Array.isArray(merged[hookType]) ? merged[hookType] : [];
+      
+      // Remove any existing AFK hooks first to avoid duplicates
+      const cleanedExisting = existingArray.map((hookConfig: any) => {
+        if (hookConfig.hooks && Array.isArray(hookConfig.hooks)) {
+          const nonAFKHooks = hookConfig.hooks.filter((hook: any) => 
+            !hook.command || !isAFKHook(hook.command)
+          );
+          return nonAFKHooks.length > 0 ? { ...hookConfig, hooks: nonAFKHooks } : null;
+        }
+        return hookConfig;
+      }).filter(Boolean);
+      
+      // Add AFK hooks to the cleaned existing hooks
+      merged[hookType] = [...cleanedExisting, ...(afkHookArray as any[])];
+    }
+  }
+  
+  return merged;
+}
+
+// Helper function to remove only AFK hooks from existing hooks
+export function removeAFKHooks(existingHooks: any): any {
+  if (!existingHooks || typeof existingHooks !== 'object') {
+    return existingHooks;
+  }
+  
+  const cleaned: any = {};
+  
+  for (const [hookType, hookArray] of Object.entries(existingHooks)) {
+    if (Array.isArray(hookArray)) {
+      const cleanedArray = hookArray.map((hookConfig: any) => {
+        if (hookConfig.hooks && Array.isArray(hookConfig.hooks)) {
+          const nonAFKHooks = hookConfig.hooks.filter((hook: any) => 
+            !hook.command || !isAFKHook(hook.command)
+          );
+          return nonAFKHooks.length > 0 ? { ...hookConfig, hooks: nonAFKHooks } : null;
+        }
+        return hookConfig;
+      }).filter(Boolean);
+      
+      if (cleanedArray.length > 0) {
+        cleaned[hookType] = cleanedArray;
+      }
+    } else {
+      // Non-array hook format, preserve as-is
+      cleaned[hookType] = hookArray;
+    }
+  }
+  
+  return Object.keys(cleaned).length > 0 ? cleaned : undefined;
+}
+
 export async function installHooks(config: AgentConfig): Promise<void> {
   const spinner = ora('Installing hooks...').start();
   
@@ -50,9 +123,9 @@ export async function installHooks(config: AgentConfig): Promise<void> {
     // Set environment variable for computer name if provided
     const envVars = config.computerName ? `CLAUDE_COMPUTER_NAME="${config.computerName}" ` : '';
     
-    // Install hook commands using the new array format
+    // Create AFK hooks using the new array format
     // Note: agentId is now auto-generated in the hooks themselves
-    settings.hooks = {
+    const afkHooks = {
       PreToolUse: [
         {
           hooks: [
@@ -95,6 +168,10 @@ export async function installHooks(config: AgentConfig): Promise<void> {
       ]
     };
 
+    // Merge AFK hooks with existing hooks instead of overwriting
+    settings.hooks = mergeHooks(settings.hooks || {}, afkHooks);
+    spinner.text = 'Merged AFK hooks with existing hooks';
+
     // Write updated settings
     writeFileSync(CLAUDE_SETTINGS_FILE, JSON.stringify(settings, null, 2));
     spinner.text = 'Updated Claude settings.json';
@@ -128,10 +205,18 @@ export async function uninstallHooks(): Promise<void> {
     const settingsContent = readFileSync(CLAUDE_SETTINGS_FILE, 'utf8');
     const settings = JSON.parse(settingsContent);
 
-    // Remove hooks section
+    // Remove only AFK hooks, preserving other hooks
     if (settings.hooks) {
-      delete settings.hooks;
-      spinner.text = 'Removed hooks from settings';
+      const cleanedHooks = removeAFKHooks(settings.hooks);
+      if (cleanedHooks && Object.keys(cleanedHooks).length > 0) {
+        settings.hooks = cleanedHooks;
+        spinner.text = 'Removed AFK hooks, preserved other hooks';
+      } else {
+        delete settings.hooks;
+        spinner.text = 'Removed all hooks (only AFK hooks were present)';
+      }
+    } else {
+      spinner.text = 'No hooks found to remove';
     }
 
     // Write updated settings
@@ -170,14 +255,8 @@ export async function checkInstallStatus(): Promise<InstallStatus> {
           return hookConfig.hooks && Array.isArray(hookConfig.hooks) &&
             hookConfig.hooks.some((hook: any) => {
               return hook.type === 'command' && 
-                typeof hook.command === 'string' && (
-                  hook.command.includes('claude-companion-agent') || 
-                  hook.command.includes('claude-companion/agent') ||
-                  hook.command.includes('pre-tool-use.js') ||
-                  hook.command.includes('post-tool-use.js') ||
-                  hook.command.includes('stop.js') ||
-                  hook.command.includes('notification.js')
-                );
+                typeof hook.command === 'string' && 
+                isAFKHook(hook.command);
             });
         });
       });
