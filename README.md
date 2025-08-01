@@ -2,6 +2,8 @@
 
 **AFK: Away From Klaude** - A remote monitoring and control system for Claude Code sessions. The name is a playful take on "Away From Keyboard" - now you can go "Away From Klaude" while still maintaining full control over your AI development workflows from any device.
 
+![ccc-dashboard.png](docs/images/ccc-dashboard.png)
+
 ## 🚀 Quick Start
 
 ### For Self-Hosting
