@@ -1,0 +1,110 @@
+import { useEffect, useRef, useState } from 'react';
+import { SSEClient } from '@/services/sse-client';
+import { useDashboardStore } from '@/store/dashboard-store';
+import { EventStreamData, HookEvent, Agent } from '@/types';
+import toast from 'react-hot-toast';
+
+export function useSSE(agentId?: string) {
+  const [client, setClient] = useState<SSEClient | null>(null);
+  const [reconnectAttempts, setReconnectAttempts] = useState(0);
+  const clientRef = useRef<SSEClient | null>(null);
+  
+  const {
+    setConnectionStatus,
+    addEvent,
+    updateAgent,
+  } = useDashboardStore();
+
+  useEffect(() => {
+    // Create SSE client
+    const sseClient = new SSEClient();
+    clientRef.current = sseClient;
+    setClient(sseClient);
+
+    // Subscribe to connection status changes
+    const unsubscribeStatus = sseClient.onStatusChange((status) => {
+      switch (status) {
+        case 'connecting':
+          setConnectionStatus('connecting');
+          break;
+        case 'connected':
+          setConnectionStatus('connected');
+          toast.success('Connected to event stream');
+          setReconnectAttempts(0);
+          break;
+        case 'reconnecting':
+          const attempts = sseClient.getReconnectAttempts();
+          setReconnectAttempts(attempts);
+          if (attempts === 1) {
+            toast.error('Connection lost, attempting to reconnect...');
+          }
+          setConnectionStatus('connecting'); // Map to existing status
+          break;
+        case 'disconnected':
+          setConnectionStatus('disconnected');
+          break;
+      }
+    });
+
+    // Subscribe to events
+    const unsubscribeEvents = sseClient.subscribe((data: EventStreamData) => {
+      switch (data.type) {
+        case 'hook_event':
+          const hookEvent = data.data as HookEvent;
+          addEvent(hookEvent);
+          break;
+          
+        case 'agent_status':
+          const agent = data.data as Agent;
+          updateAgent(agent);
+          break;
+          
+        case 'error':
+          const errorData = data.data as { message: string };
+          toast.error(`Server error: ${errorData.message}`);
+          setConnectionStatus('error');
+          break;
+          
+        default:
+          console.log('Unknown event type:', data.type);
+      }
+    });
+
+    // Connect to server
+    sseClient.connect(agentId);
+
+    // Cleanup on unmount
+    return () => {
+      unsubscribeStatus();
+      unsubscribeEvents();
+      sseClient.disconnect();
+      clientRef.current = null;
+    };
+  }, [agentId, setConnectionStatus, addEvent, updateAgent]);
+
+  const disconnect = () => {
+    if (clientRef.current) {
+      clientRef.current.disconnect();
+      setConnectionStatus('disconnected');
+    }
+  };
+
+  const reconnect = () => {
+    if (clientRef.current) {
+      setConnectionStatus('connecting');
+      clientRef.current.connect(agentId);
+    }
+  };
+
+  const connectionState = client?.getConnectionState() || 'closed';
+  const status = client?.getStatus() || 'disconnected';
+
+  return {
+    client,
+    connectionState,
+    status,
+    reconnectAttempts,
+    disconnect,
+    reconnect,
+  };
+}

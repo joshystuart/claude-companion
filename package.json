@@ -1,0 +1,19 @@
+{
+  "name": "afk-away-from-klaude",
+  "version": "0.1.0",
+  "description": "AFK: Away From Klaude - Remote monitoring and control system for Claude Code sessions",
+  "private": true,
+  "scripts": {
+    "init": "concurrently \"npm run agent:init\" \"npm run server:init\" \"npm run client:init\"",
+    "agent:init": "cd agent && npm install && npm run build",
+    "agent:install": "cd agent && afk-agent install",
+    "start": "concurrently \"npm run server:start\" \"npm run client:start\"",
+    "server:init": "cd server && npm install",
+    "server:start": "cd server && npm run start",
+    "client:init": "cd client && npm install",
+    "client:start": "cd client && npm run start"
+  },
+  "devDependencies": {
+    "concurrently": "^8.2.0"
+  }
+}

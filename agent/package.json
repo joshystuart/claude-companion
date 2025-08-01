@@ -1,0 +1,52 @@
+{
+  "name": "afk-agent",
+  "version": "0.1.0",
+  "description": "NPM-installable hook installer for AFK: Away From Klaude monitoring",
+  "main": "dist/index.js",
+  "bin": {
+    "afk-agent": "./bin/afk-agent"
+  },
+  "scripts": {
+    "build": "tsc",
+    "dev": "tsc --watch",
+    "clean": "rimraf dist",
+    "test": "jest",
+    "lint": "eslint src --ext .ts",
+    "prepublishOnly": "npm run build"
+  },
+  "files": [
+    "dist",
+    "bin"
+  ],
+  "dependencies": {
+    "commander": "^11.0.0",
+    "node-fetch": "^3.3.2",
+    "fs-extra": "^11.1.1",
+    "chalk": "^5.3.0",
+    "ora": "^7.0.1"
+  },
+  "devDependencies": {
+    "@types/node": "^20.0.0",
+    "@types/fs-extra": "^11.0.1",
+    "@types/jest": "^29.5.0",
+    "typescript": "^5.0.0",
+    "jest": "^29.5.0",
+    "ts-jest": "^29.1.0",
+    "eslint": "^8.40.0",
+    "@typescript-eslint/eslint-plugin": "^5.59.0",
+    "@typescript-eslint/parser": "^5.59.0",
+    "rimraf": "^5.0.1"
+  },
+  "engines": {
+    "node": ">=18.0.0"
+  },
+  "keywords": [
+    "claude-code",
+    "hooks",
+    "monitoring",
+    "cli"
+  ],
+  "author": "AFK: Away From Klaude",
+  "license": "MIT",
+  "preferGlobal": true
+}
