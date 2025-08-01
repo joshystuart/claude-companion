@@ -4,45 +4,38 @@
 
 ## 🚀 Quick Start
 
-### For Claude Code Users
-
-1. **Install the agent globally**:
-   ```bash
-   npm install -g afk-agent
-   ```
-
-2. **Install hooks** (pointing to hosted dashboard):
-   ```bash
-   afk-agent install --server-url https://your-dashboard.com
-   ```
-
-3. **Open the dashboard** and monitor your Claude Code sessions in real-time!
-
 ### For Self-Hosting
 
 1. **Clone and install**:
    ```bash
-   git clone https://github.com/your-org/afk-away-from-klaude.git
-   cd afk-away-from-klaude
-   npm install
+   git clone https://github.com/joshystuart/claude-companion.git
+   cd claude-companion
+   npm install && npm run init
    ```
 
-2. **Start the development servers**:
-   ```bash
-   # Terminal 1 - Start the server
-   npm run dev:server
+2. **Install the agent**:
+This will add the necessary hooks to the `~/.claude/settings.json` file, allowing the agent to monitor and control your Claude Code sessions.
 
-   # Terminal 2 - Start the client dashboard
-   npm run dev:client
+   ```bash
+   npm run agent:install
+   
+   # Or you can call the agent directly
+   afk-agent status
+   # With the default server URL http://localhost:3000
+   afk-agent install 
+   # Or with a custom server URL
+   afk-agent install --server-url http://localhost:4000
    ```
-
-3. **Install the agent**:
+   
+3. **Start the development servers**:
    ```bash
-   cd agent && npm link
-   afk-agent install --server-url http://localhost:3000
+   # Run both the server and client in development mode
+   npm start 
    ```
 
 4. **Open the dashboard** at `http://localhost:3001`
+
+5. Restart your Claude Code session to begin streaming events.
 
 ## 📋 Phase 1 Features
 
